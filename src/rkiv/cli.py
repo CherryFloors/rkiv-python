@@ -1,12 +1,85 @@
+import time
+from multiprocessing import Process
+
 import click
 
-
 from rkiv import __version__
+from rkiv.config import Config
+from rkiv.audio import auto_audio_ripper, audio_rip_dash
+from rkiv import opticaldevices
+
+CONFIG = Config()
 
 
-@click.command()
 @click.version_option(version=__version__)
-def main():
-    """rkiv"""
-    click.secho("rkiv", fg="green")
-    click.echo("Welcome")
+@click.group()
+def cli():
+    pass
+
+
+@cli.command()
+@click.option("-d", "--dev", required=True)
+def arm(dev):
+    import json
+    from pydvdid import compute
+    from urllib.request import urlopen
+
+    """arm"""
+
+    # get_disc_type
+    # get_disc_info
+    # get_disc_title
+
+    click.secho("Automatic Ripping Machine", fg="green")
+    click.echo(f"Searching for match to {dev}")
+    crc64 = compute(dev)
+    click.echo(f"CRC64: {crc64}")
+    urlstring = f"https://1337server.pythonanywhere.com/api/v1/?mode=s&crc64={crc64}"
+    dvd_xml = urlopen(urlstring).read()
+    print(json.dumps(json.loads(dvd_xml), indent=4))
+
+
+@cli.command()
+def audio():
+    click.secho("rkiv Audio Ripper", fg="green")
+    
+    ActiveDriveList = opticaldevices.get_optical_drives()
+    ProcList = [Process(target=auto_audio_ripper, args=(d,)) for d in ActiveDriveList]
+    
+    for prc in ProcList:
+        prc.start()
+
+    DriveProgress, ResetCursor = audio_rip_dash(ActiveDriveList)
+    click.echo(DriveProgress)
+    
+    while True:
+        time.sleep(5)
+        DriveProgress, ResetCursor = audio_rip_dash(ActiveDriveList)
+        click.echo(ResetCursor)
+        click.echo(DriveProgress)
+
+
+@cli.command()
+def visual():
+    pass
+
+
+@cli.command()
+def inventory():
+    """inventory"""
+    pass
+    # stat
+
+
+@cli.command()
+def flacify():
+    """flacify"""
+    pass
+
+
+@cli.command()
+def freshjelly():
+    """freshjelly"""
+    from rkiv.freshjelly import jellyfresh
+
+    jellyfresh()
