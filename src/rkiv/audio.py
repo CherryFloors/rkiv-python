@@ -2,6 +2,7 @@ import os
 import subprocess
 import pathlib
 import time
+import uuid
 from typing import Tuple, List
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +12,7 @@ from rkiv.opticaldevices import OpticalDrive
 
 
 CONFIG = Config()
+
 
 def get_files_list(root_path: str) -> List[str]:
     """Returns list full file path strings"""
@@ -31,15 +33,25 @@ def convert_to_meta_data_timestamp_str(date_time_object: datetime) -> str:
         "%Y-%m-%dT%H:%M:%S.000000Z"
     )
 
+
 def convert_to_meta_data_date_str(date_time_object: datetime) -> str:
     """convert_to_meta_data_date_str"""
     return date_time_object.strftime("%Y-%m-%d")
 
+
 def time_stamp_alac(file: str, timestamp: str) -> None:
     """time_stamp_alac"""
-    cmd_list = ["AtomicParsley", file, "--overWrite", "--rDNSatom", timestamp, "name=date_added", "domain=com.apple.iTunes"]
+    cmd_list = [
+        "AtomicParsley",
+        file,
+        "--overWrite",
+        "--rDNSatom",
+        timestamp,
+        "name=date_added",
+        "domain=com.apple.iTunes",
+    ]
     proc_output = subprocess.run(cmd_list, capture_output=True, text=True)
-    
+
     return proc_output.returncode
 
 
@@ -65,7 +77,7 @@ def convert_to_alac(
 
     if timestamp:
         return time_stamp_alac(file=out_file_path, timestamp=timestamp)
-        
+
     return proc_output.returncode
 
 
@@ -95,9 +107,7 @@ def audio_rip_dash(drive_list: List[OpticalDrive]) -> Tuple[str]:
             n_prg = int((ripped / total) * prog_bar_w)
             s_prg = "#" * n_prg
             fill = " " * (prog_bar_w - n_prg)
-            drive_progress = (
-                f"{drive_progress}{drv.device_name}: [{s_prg}{fill}] ({ripped}/{total})\n"
-            )
+            drive_progress = f"{drive_progress}{drv.device_name}: [{s_prg}{fill}] ({ripped}/{total})\n"
         else:
             fill = " " * (prog_bar_w + 9)
             drive_progress = f"{drive_progress}{drv.device_name}: X{fill}\n"
@@ -134,7 +144,9 @@ def audio_rip_wrapper(drive: OpticalDrive) -> None:
     output_array = out.stderr.splitlines()
     # Check for errors
     if "error" in out.stdout or "error" in out.stderr:
-        with open(f"{CONFIG.music_rip_dir}/{drive.device_name}_error.log", "a+") as errorout:
+        with open(
+            f"{CONFIG.music_rip_dir}/{drive.device_name}_error.log", "a+"
+        ) as errorout:
             errorout.write(f"--- {output_array[0]} ---\n")
             for l in output_array:
                 errorout.write(f"  {l}\n")
@@ -150,8 +162,10 @@ def audio_rip_wrapper(drive: OpticalDrive) -> None:
             # Remove wav file
             os.remove(f)
     # Move files to
+    new_home = CONFIG.music_rip_dir.joinpath(str(uuid.uuid4()))
+    new_home.mkdir()
     out = subprocess.run(
-        [f"cp -r * {CONFIG.music_rip_dir}/"], shell=True, capture_output=True, text=True
+        [f"cp -r * {str(new_home)}/"], shell=True, capture_output=True, text=True
     )
     out = subprocess.run(["rm -r *"], shell=True, capture_output=True, text=True)
 

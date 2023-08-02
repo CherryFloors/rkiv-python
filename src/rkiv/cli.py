@@ -42,16 +42,16 @@ def arm(dev):
 @cli.command()
 def audio():
     click.secho("rkiv Audio Ripper", fg="green")
-    
+
     ActiveDriveList = opticaldevices.get_optical_drives()
     ProcList = [Process(target=auto_audio_ripper, args=(d,)) for d in ActiveDriveList]
-    
+
     for prc in ProcList:
         prc.start()
 
     DriveProgress, ResetCursor = audio_rip_dash(ActiveDriveList)
     click.echo(DriveProgress)
-    
+
     while True:
         time.sleep(5)
         DriveProgress, ResetCursor = audio_rip_dash(ActiveDriveList)
@@ -76,6 +76,15 @@ def flacify():
     """flacify"""
     pass
 
+
+@cli.command
+@click.option("-l", "--last", required=False)
+def latest(last: int=90):
+    """
+    Creates a "Recently Added" playlist in the mpd playlist folder. It will replace
+    any existing playlist with the same name.
+    """
+    pass
 
 @cli.command()
 def freshjelly():
