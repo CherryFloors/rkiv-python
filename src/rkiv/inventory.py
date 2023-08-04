@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
 from enum import Enum
-from typing import List, Union, Dict, Any
+from typing import List, Dict, Any
 from dataclasses import dataclass
 
 
 import pandas
-import pyudev
+import pyudev  # type: ignore
 
 
 context = pyudev.Context()
@@ -43,13 +43,14 @@ class OpticalDiscType(str, Enum):
     DVD = "dvd"
     BLU_RAY = "blu_ray"
     FILES = "files"
+    UNDEFINED = "undefined"
 
     @classmethod
     def to_categorical(cls) -> pandas.CategoricalDtype:
         return pandas.CategoricalDtype(categories=[i.value for i in cls], ordered=False)
 
     @classmethod
-    def categorize(cls, dir: Path) -> Union["OpticalDiscType", None]:
+    def categorize(cls, dir: Path) -> "OpticalDiscType":
         """categorize"""
 
         BD_FILES = {"BDMV"}
@@ -59,10 +60,10 @@ class OpticalDiscType(str, Enum):
 
         _, dirs, files = next(os.walk(dir))
 
-        for dir in dirs:
-            if dir in BD_FILES:
+        for d in dirs:
+            if d in BD_FILES:
                 return cls.BLU_RAY
-            if dir in DVD_FILES:
+            if d in DVD_FILES:
                 return cls.DVD
 
         for file in files:
@@ -72,7 +73,7 @@ class OpticalDiscType(str, Enum):
             if ext in FILES_EXTS:
                 return cls.FILES
 
-        return None
+        return cls.UNDEFINED
 
 
 class MediaCategory(str, Enum):
@@ -137,7 +138,7 @@ class ArchivedDisc:
         self.iso = iso
         self.problem = problem
 
-    def dict(self) -> Dict[str:Any]:
+    def dict(self) -> Dict[str, Any]:
         """dict"""
         return {
             "title": self.title,
@@ -150,7 +151,7 @@ class ArchivedDisc:
         }
 
     @classmethod
-    def dtypes(cls) -> Dict[str:Any]:
+    def dtypes(cls) -> Dict[str, Any]:
         return {
             "title": str,
             "disc_name": str,

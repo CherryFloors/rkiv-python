@@ -58,43 +58,52 @@ class Config:
     def _overrides(self, conf: dict) -> None:
         """apply overrides from conf"""
 
-        if conf.get("workspace"):
-            setattr(self, "workspace", _resolve_path(conf.get("workspace")))
+        _workspace = conf.get("workspace")
+        if _workspace is not None:
+            setattr(self, "workspace", _resolve_path(_workspace))
 
-        if conf.get("music_rip_dir"):
-            setattr(self, "music_rip_dir", _resolve_path(conf.get("music_rip_dir")))
+        _music_rip_dir = conf.get("music_rip_dir")
+        if _music_rip_dir is not None:
+            setattr(self, "music_rip_dir", _resolve_path(_music_rip_dir))
 
-        if conf.get("video_rip_dir"):
-            setattr(self, "video_rip_dir", _resolve_path(conf.get("video_rip_dir")))
+        _video_rip_dir = conf.get("video_rip_dir")
+        if _video_rip_dir is not None:
+            setattr(self, "video_rip_dir", _resolve_path(_video_rip_dir))
 
-        if conf.get("itunes_dir"):
-            setattr(self, "itunes_dir", _resolve_path(conf.get("itunes_dir")))
+        _itunes_dir = conf.get("itunes_dir")
+        if _itunes_dir is not None:
+            setattr(self, "itunes_dir", _resolve_path(_itunes_dir))
 
-        if conf.get("mpd_dir"):
-            setattr(self, "mpd_dir", _resolve_path(conf.get("mpd_dir")))
+        _mpd_dir = conf.get("mpd_dir")
+        if _mpd_dir is not None:
+            setattr(self, "mpd_dir", _resolve_path(_mpd_dir))
 
-        if conf.get("abcde_config"):
-            setattr(self, "abcde_config", _resolve_path(conf.get("abcde_config")))
+        _abcde_config = conf.get("abcde_config")
+        if _abcde_config is not None:
+            setattr(self, "abcde_config", _resolve_path(_abcde_config))
 
-        if conf.get("video_archives"):
+        _video_archives = conf.get("video_archives")
+        if _video_archives is not None:
             setattr(
                 self,
                 "video_archives",
-                [_resolve_path(i) for i in conf.get("video_archives")],
+                [_resolve_path(i) for i in _video_archives],
             )
 
-        if conf.get("video_streams"):
+        _video_streams = conf.get("video_streams")
+        if _video_streams is not None:
             setattr(
                 self,
                 "video_streams",
-                [_resolve_path(i) for i in conf.get("video_streams")],
+                [_resolve_path(i) for i in _video_streams],
             )
 
-        if conf.get("audio_streams"):
+        _audio_streams = conf.get("audio_streams")
+        if _audio_streams is not None:
             setattr(
                 self,
                 "audio_streams",
-                [_resolve_path(i) for i in conf.get("audio_streams")],
+                [_resolve_path(i) for i in _audio_streams],
             )
 
     def __init__(self, load: bool = True) -> None:

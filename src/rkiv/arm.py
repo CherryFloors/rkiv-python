@@ -1,40 +1,38 @@
-from typing import List
 from enum import Enum
-from pathlib import Path
 
 
-class OpticalDiscType(Enum, str):
+class OpticalDiscType(str, Enum):
     CD = "cd"
     DVD = "dvd"
     BLU_RAY = "blu_ray"
 
 
-class OpticalDrive:
-    __slots__ = (
-        "path",
-        "is_mounted",
-        "mount_location",
-        "disc_type",
-    )
+# class OpticalDrive:
+#     __slots__ = (
+#         "path",
+#         "is_mounted",
+#         "mount_location",
+#         "disc_type",
+#     )
 
-    device_name: str
-    device_path: Path
-    is_mounted: bool
-    mount_path: Path
-    disc_type: OpticalDiscType
+#     device_name: str
+#     device_path: Path
+#     is_mounted: bool
+#     mount_path: Path
+#     disc_type: OpticalDiscType
 
-    def __init__(
-        self,
-        path: str,
-        is_mounted: bool,
-        mount_location: str,
-        disc_type: OpticalDiscType,
-    ) -> None:
-        pass
+#     def __init__(
+#         self,
+#         path: str,
+#         is_mounted: bool,
+#         mount_location: str,
+#         disc_type: OpticalDiscType,
+#     ) -> None:
+#         pass
 
-    @classmethod
-    def fetch_drives() -> List["OpticalDrive"]:
-        pass
+#     @classmethod
+#     def fetch_drives(cls) -> List["OpticalDrive"]:
+#         pass
 
 
 #     {

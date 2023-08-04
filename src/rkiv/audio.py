@@ -3,7 +3,7 @@ import subprocess
 import pathlib
 import time
 import uuid
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -39,7 +39,7 @@ def convert_to_meta_data_date_str(date_time_object: datetime) -> str:
     return date_time_object.strftime("%Y-%m-%d")
 
 
-def time_stamp_alac(file: str, timestamp: str) -> None:
+def time_stamp_alac(file: str, timestamp: str) -> int:
     """time_stamp_alac"""
     cmd_list = [
         "AtomicParsley",
@@ -56,7 +56,7 @@ def time_stamp_alac(file: str, timestamp: str) -> None:
 
 
 def convert_to_alac(
-    in_file_path: str, out_file_path: str, timestamp: str = None
+    in_file_path: str, out_file_path: str, timestamp: Optional[str] = None
 ) -> int:
     # Define the cmd strings
     cmd_list = [
@@ -75,13 +75,13 @@ def convert_to_alac(
     if proc_output.returncode != 0:
         return proc_output.returncode
 
-    if timestamp:
+    if timestamp is not None:
         return time_stamp_alac(file=out_file_path, timestamp=timestamp)
 
     return proc_output.returncode
 
 
-def audio_rip_dash(drive_list: List[OpticalDrive]) -> Tuple[str]:
+def audio_rip_dash(drive_list: List[OpticalDrive]) -> Tuple[str, str]:
     # Calculate reset
     reset_cursor = "\033[F" * (5 + len(drive_list))
     prog_bar_w = 20
@@ -153,12 +153,12 @@ def audio_rip_wrapper(drive: OpticalDrive) -> None:
     # Convert to alac
     files = get_files_list(".")
     for f in files:
-        out = convert_to_alac(
+        exit_code = convert_to_alac(
             f,
             pathlib.Path(f).with_suffix(".m4a").as_posix(),
             convert_to_meta_data_date_str(get_current_datetime_object()),
         )
-        if out == 0:
+        if exit_code == 0:
             # Remove wav file
             os.remove(f)
     # Move files to

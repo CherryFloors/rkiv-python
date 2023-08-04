@@ -3,9 +3,8 @@ import base64
 from datetime import datetime
 from typing import List
 
-
 import pydantic
-from jellyfin_apiclient_python import JellyfinClient
+from jellyfin_apiclient_python import JellyfinClient  # type: ignore
 
 
 def get_asset_art_webp(id) -> bytes:
@@ -143,10 +142,10 @@ def media_info_wrapper(media_info: str) -> str:
 
 
 def movie_info(info: MovieInfo) -> str:
-    s = media_info_item(info.year)
+    s = media_info_item(str(info.year))
     s += media_info_item(info.running_time)
     s += official_rating(info.offical_rating)
-    s += star_rating(info.community_rating)
+    s += star_rating(str(info.community_rating))
     s += get_critic_rating_div(info.critic_rating)
     media_info = media_info_wrapper(s)
     title = movie_tv_title(info.name)

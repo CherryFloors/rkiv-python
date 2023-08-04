@@ -1,6 +1,9 @@
+import json
 import time
 from multiprocessing import Process
+from urllib.request import urlopen
 
+from pydvdid import compute  # type: ignore
 import click
 
 from rkiv import __version__
@@ -20,10 +23,6 @@ def cli():
 @cli.command()
 @click.option("-d", "--dev", required=True)
 def arm(dev):
-    import json
-    from pydvdid import compute
-    from urllib.request import urlopen
-
     """arm"""
 
     # get_disc_type
@@ -79,14 +78,16 @@ def flacify():
 
 @cli.command
 @click.option("-l", "--last", required=False)
-def latest(last: int=90):
+def latest(last: int = 90):
     """
     Creates a "Recently Added" playlist in the mpd playlist folder. It will replace
     any existing playlist with the same name.
     """
     pass
 
+
 @cli.command()
+@click.option("-l", "--last", required=False)
 def freshjelly():
     """freshjelly"""
     from rkiv.freshjelly import jellyfresh

@@ -41,4 +41,5 @@ class TestConfig:
             if isinstance(v, list):
                 assert getattr(c, k) == [Path(i) for i in v]
             else:
+                assert isinstance(v, str)
                 assert getattr(c, k) == Path(v)

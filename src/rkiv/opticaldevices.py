@@ -2,11 +2,11 @@
 
 import subprocess
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 from dataclasses import dataclass
 from enum import Enum
 
-import pyudev
+# import pyudev
 
 
 class OpticalDiscType(str, Enum):
@@ -44,33 +44,52 @@ class OpticalDrive:
         self.device_path = device_path
         self.mount_path = mount_path
 
-    def __eq__(self, other: "OpticalDrive") -> bool:
+    def __eq__(self, other: object) -> bool:
         """__eq__"""
+        if not isinstance(other, OpticalDrive):
+            return NotImplemented
+
         return self.device_name == other.device_name
 
-    def __lt__(self, other: "OpticalDrive") -> bool:
+    def __lt__(self, other: object) -> bool:
         """__lt__"""
+        if not isinstance(other, OpticalDrive):
+            return NotImplemented
+
         if self._alpha() == other._alpha():
             return self._numeric() < other._numeric()
-        return self._alpha < other._alpha()
 
-    def __le__(self, other: "OpticalDrive") -> bool:
+        return self._alpha() < other._alpha()
+
+    def __le__(self, other: object) -> bool:
         """__le__"""
+        if not isinstance(other, OpticalDrive):
+            return NotImplemented
+
         if self._alpha() == other._alpha():
             return self._numeric() <= other._numeric()
-        return self._alpha <= other._alpha()
 
-    def __gt__(self, other: "OpticalDrive") -> bool:
+        return self._alpha() <= other._alpha()
+
+    def __gt__(self, other: object) -> bool:
         """__gt__"""
+        if not isinstance(other, OpticalDrive):
+            return NotImplemented
+
         if self._alpha() == other._alpha():
             return self._numeric() > other._numeric()
-        return self._alpha > other._alpha()
 
-    def __ge__(self, other: "OpticalDrive") -> bool:
+        return self._alpha() > other._alpha()
+
+    def __ge__(self, other: object) -> bool:
         """__ge__"""
+        if not isinstance(other, OpticalDrive):
+            return NotImplemented
+
         if self._alpha() == other._alpha():
             return self._numeric() >= other._numeric()
-        return self._alpha >= other._alpha()
+
+        return self._alpha() >= other._alpha()
 
     def _alpha(self) -> str:
         return "".join([i for i in self.device_name if i.isalpha()])
