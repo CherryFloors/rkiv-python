@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List
+from typing import List, Dict, Any
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +15,10 @@ def _user_config_dir() -> Path:
 
 def _rkiv_dir() -> Path:
     return _user_config_dir().joinpath("rkiv")
+
+
+def _conf_path() -> Path:
+    return _rkiv_dir().joinpath("rkiv.json")
 
 
 @dataclass
@@ -118,8 +122,46 @@ class Config:
         self.audio_streams = [Path.home().joinpath("Videos")]
 
         if load:
-            conf_path = _rkiv_dir().joinpath("rkiv.json")
+            conf_path = _conf_path()
             if conf_path.exists():
                 with conf_path.open("r") as f:
                     conf = json.load(f)
                 self._overrides(conf=conf)
+
+    def __repr__(self) -> str:
+        attributes = [k for k in self.__slots__]
+        width = max([len(i) for i in attributes])
+        s = f"Config: {str(_conf_path())}\n"
+        s += "-" * len(s) + "\n"
+        for k in attributes:
+            v = self.__getattribute__(k)
+            space = " " * (width - len(str(k)) + 2)
+            if isinstance(v, list):
+                extra_space = " " * (width + 2) + "    "
+                end_space = len(f"  {k}{space}")
+                s += f"  {k}{space}[\n"
+                s += ",\n".join([extra_space + str(i) for i in v])
+                s += "\n" + (end_space * " ") + "]\n"
+            else:
+                s += f"  {k}{space}{str(v)}\n"
+        return s
+
+    def dict(self) -> Dict[str, Any]:
+        """Returns a dict representation of the object"""
+        return {
+            "workspace": str(self.workspace),
+            "music_rip_dir": str(self.music_rip_dir),
+            "video_rip_dir": str(self.video_rip_dir),
+            "itunes_dir": str(self.itunes_dir),
+            "mpd_dir": str(self.mpd_dir),
+            "abcde_config": str(self.abcde_config),
+            "video_archives": [str(i) for i in self.video_archives],
+            "video_streams": [str(i) for i in self.video_streams],
+            "audio_streams": [str(i) for i in self.audio_streams],
+        }
+
+    def save(self) -> None:
+        """Write the config out to disk"""
+
+        with open(_conf_path(), "w") as f:
+            f.write(json.dump(self.dict(), indent=4))

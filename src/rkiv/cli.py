@@ -21,6 +21,14 @@ def cli():
 
 
 @cli.command()
+def config():
+    """
+    Configure rkiv
+    """
+    print(CONFIG)
+
+
+@cli.command()
 @click.option("-d", "--dev", required=True)
 def arm(dev):
     """arm"""
@@ -64,7 +72,7 @@ def visual():
 
 
 @cli.command()
-def inventory():
+def inventory() -> None:
     """inventory"""
     pass
     # stat
@@ -93,3 +101,18 @@ def freshjelly():
     from rkiv.freshjelly import jellyfresh
 
     jellyfresh()
+
+
+@cli.command()
+@click.option(
+    "-s", "--scrape", is_flag=True, default=False, help="Update collection info"
+)
+def collector(scrape: bool) -> None:
+    """
+    gathers and manages movie collectoions including Ebert's favorites,
+    Dinner and a Movie, and The Rewatchables
+    """
+    click.secho("collector")
+
+    if scrape:
+        click.secho("You have picked scrape")
