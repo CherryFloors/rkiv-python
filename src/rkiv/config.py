@@ -160,8 +160,13 @@ class Config:
             "audio_streams": [str(i) for i in self.audio_streams],
         }
 
+    @staticmethod
+    def data_directory() -> Path:
+        """Returns the data directory for rkiv"""
+        return _rkiv_dir()
+
     def save(self) -> None:
         """Write the config out to disk"""
 
         with open(_conf_path(), "w") as f:
-            f.write(json.dump(self.dict(), indent=4))
+            f.write(json.dumps(self.dict(), indent=4))

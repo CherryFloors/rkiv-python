@@ -17,4 +17,3 @@ class MakeMKVBetaKeyParser(HTMLParser):
         page = requests.get("https://forum.makemkv.com/forum/viewtopic.php?f=5&t=1053")
         self.feed(page.content.decode("utf-8"))
         return self.key
-
