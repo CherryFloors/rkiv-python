@@ -69,8 +69,13 @@ def audio():
 
 
 @cli.command()
-def visual():
-    pass
+@click.option("-d", "--drive", required=False)
+def video(drive: str):
+    from rkiv.video import AutoVideoRipper
+    from rkiv.opticaldevices import get_optical_drives
+
+    auto_video_ripper = AutoVideoRipper(drives=get_optical_drives())
+    auto_video_ripper.run()
 
 
 @cli.command()
@@ -81,12 +86,14 @@ def inventory() -> None:
 
 
 @cli.command()
-def flacify():
+def makemkv():
     """flacify"""
-    pass
+    from rkiv.makemkv import MakeMKVBetaKeyParser
+    parser = MakeMKVBetaKeyParser()
+    click.echo(parser.scrape_reg_key())
 
 
-@cli.command
+@cli.command()
 @click.option("-l", "--last", required=False)
 def latest(last: int = 90):
     """

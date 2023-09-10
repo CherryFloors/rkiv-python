@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import List
 from dataclasses import dataclass
 from enum import Enum
+from urllib import parse
 
 # import pyudev
 
@@ -105,6 +106,30 @@ class OpticalDrive:
         except:
             pass
         return exists
+
+    def get_mount_location(self) -> str:
+        proc_one = subprocess.Popen(["cat", "/proc/mounts"], stdout=subprocess.PIPE)
+        mount_info = subprocess.run(
+            ["grep", "-i", self.device_name],
+            stdin=proc_one.stdout,
+            capture_output=True,
+            text=True,
+        )
+        if proc_one.stdout is not None:
+            proc_one.stdout.close()
+        info = mount_info.stdout
+        if info == "":
+            return info
+        return parse.unquote(info.split()[1])
+
+    @classmethod
+    def get_optical_drive(cls, device_name: str) -> "OpticalDrive":
+        """get_optical_drives"""
+        return cls(
+            device_name=device_name,
+            device_path=Path("/dev").joinpath(device_name),
+            mount_path=Path(f"/run/user/1000/gvfs/cdda:host={device_name}"),
+        )
 
 
 def get_optical_drives() -> List[OpticalDrive]:
