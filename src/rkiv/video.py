@@ -28,22 +28,26 @@ class UserInput:
     output_path: str
     log_path: str
     disc_name: str
+    progress_check_path: Path
 
     def __init__(
         self,
         output_path: str,
         log_path: str,
         disc_name: str,
+        progress_check_path: Path,
     ) -> None:
         self.output_path = output_path
         self.log_path = log_path
         self.disc_name = disc_name
+        self.progress_check_path = progress_check_path
 
     def to_json(self) -> dict:
         return {
             "output_path": self.output_path,
             "log_path": self.log_path,
             "disc_name": self.disc_name,
+            "progress_check_path": str(self.progress_check_path),
         }
 
     @classmethod
@@ -52,6 +56,7 @@ class UserInput:
             output_path=json["output_path"],
             log_path=json["log_path"],
             disc_name=json["disc_name"],
+            progress_check_path=Path(json["progress_check_path"]),
         )
 
 
@@ -170,9 +175,13 @@ class VideoRipper:
             disc_path = f"{archive_path}/movies/{mName}"
             disc_name = f"{mName}_D{dNum}"
 
+        progress_check_path = Path(disc_path).joinpath(f"TEMP_{disc_name}")
+        if self._is_blu_ray():
+            progress_check_path = Path(disc_path).joinpath(disc_name)
+
         log_file = log_root.joinpath(f"{disc_name}.log")
         _user_input = UserInput(
-            output_path=disc_path, log_path=str(log_file), disc_name=disc_name
+            output_path=disc_path, log_path=str(log_file), disc_name=disc_name, progress_check_path=progress_check_path,
         )
         self._store_user_input(user_input=_user_input)
 
@@ -229,7 +238,7 @@ class VideoRipper:
                 pipe.send(
                     RipperMessage(
                         status=RipperStatus.RIPPING,
-                        temp_output=Path(user_input.output_path),
+                        temp_output=user_input.progress_check_path,
                         log_path=Path(user_input.log_path),
                         disc_name=user_input.disc_name,
                         mount_path=Path(mount_location),
@@ -239,7 +248,7 @@ class VideoRipper:
                 pipe.send(
                     RipperMessage(
                         status=RipperStatus.FINISHED,
-                        temp_output=Path(user_input.output_path),
+                        temp_output=user_input.progress_check_path,
                         log_path=Path(user_input.log_path),
                         disc_name=user_input.disc_name,
                         mount_path=Path(mount_location),

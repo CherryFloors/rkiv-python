@@ -120,7 +120,7 @@ class OpticalDrive:
         info = mount_info.stdout
         if info == "":
             return info
-        return parse.unquote(info.split()[1])
+        return info.split()[1].replace('\\040',' ')
 
     @classmethod
     def get_optical_drive(cls, device_name: str) -> "OpticalDrive":
