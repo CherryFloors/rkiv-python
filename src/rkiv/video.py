@@ -132,7 +132,14 @@ class VideoRipper:
     def launch_terminal_prompt(self) -> None:
         python = sys.executable
         run_script = f"{python} {__file__} {self.drive.device_name}"
-        cmd = ["gnome-terminal", "--disable-factory", "--", "/bin/bash", "-c", run_script]
+        cmd = [
+            "gnome-terminal",
+            "--disable-factory",
+            "--",
+            "/bin/bash",
+            "-c",
+            run_script,
+        ]
         _ = subprocess.run(cmd, stderr=subprocess.PIPE)
 
     def _is_blu_ray(self) -> bool:
@@ -181,13 +188,17 @@ class VideoRipper:
 
         log_file = log_root.joinpath(f"{disc_name}.log")
         _user_input = UserInput(
-            output_path=disc_path, log_path=str(log_file), disc_name=disc_name, progress_check_path=progress_check_path,
+            output_path=disc_path,
+            log_path=str(log_file),
+            disc_name=disc_name,
+            progress_check_path=progress_check_path,
         )
         self._store_user_input(user_input=_user_input)
 
     def _archive_disc(self, user_input: UserInput) -> None:
-        
-        temp_dvd_output_holder = Path(user_input.output_path).joinpath(f"TEMP_{user_input.disc_name}")
+        temp_dvd_output_holder = Path(user_input.output_path).joinpath(
+            f"TEMP_{user_input.disc_name}"
+        )
         final_output_path = Path(user_input.output_path).joinpath(user_input.disc_name)
 
         if not Path(user_input.output_path).exists():
@@ -341,7 +352,6 @@ class AutoVideoRipper:
                     problems=failures,
                 )
             )
-        
 
     def _update_ripping_state(self) -> None:
         """
@@ -357,7 +367,6 @@ class AutoVideoRipper:
                         disc_name=_state.disc_name,
                     )
                 self._ripping_state[drive] = _state
-            
 
     def run(self) -> None:
         """
