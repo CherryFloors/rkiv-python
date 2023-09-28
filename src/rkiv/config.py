@@ -118,8 +118,8 @@ class Config:
         self.mpd_dir = _user_config_dir().joinpath("mpd")
         self.abcde_config = _rkiv_dir().joinpath("abcde.conf")
         self.video_archives = [Path.home().joinpath("Archive")]
-        self.video_streams = [Path.home().joinpath("Music")]
-        self.audio_streams = [Path.home().joinpath("Videos")]
+        self.video_streams = [Path.home().joinpath("Videos")]
+        self.audio_streams = [Path.home().joinpath("Music")]
 
         if load:
             conf_path = _conf_path()
