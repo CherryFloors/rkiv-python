@@ -4,14 +4,19 @@ from datetime import datetime, timedelta
 from multiprocessing import Process
 from urllib.request import urlopen
 from typing import Optional
+import os
+import subprocess
 
 from pydvdid import compute  # type: ignore
 import click
+from pathlib import Path
 
 from rkiv import __version__
 from rkiv.config import Config
 from rkiv.audio import auto_audio_ripper, audio_rip_dash
 from rkiv import opticaldevices
+from rkiv.inventory import ArchivedDisc, MediaCategory
+from rkiv.makemkv import MakeMKV, extract_mkv
 
 CONFIG = Config()
 
@@ -81,14 +86,133 @@ def video(drive: str):
 @cli.command()
 def inventory() -> None:
     """inventory"""
+
     pass
     # stat
+
+
+@cli.command()
+@click.option(
+    "-c",
+    "--collection",
+    is_flag=False,
+    default=None,
+    help="Exctract archived discs found here",
+)
+@click.option(
+    "-o", "--output", is_flag=False, default=None, help="Store .mkv files here"
+)
+def extract(collection: str, output: str):
+    """
+    Extracts mkv files from disc media. Defaults to searching for main feature.
+    Checks consensus between handbrake and longest title
+    """
+
+    # TODO walk_sl can be used to filter
+    # walk_sl = StreamObject.walk_stream_library(
+    #     root_path=CONFIG.video_streams[0]
+    # ) + StreamObject.walk_stream_library(root_path=CONFIG.video_streams[1])
+    walk_ark = ArchivedDisc.walk_disc_archive(Path(collection))
+
+    # stream_matches = {i.match_name for i in walk_sl}
+    # unextracted = [i for i in walk_ark if i.path.parent.stem not in stream_matches]
+
+    movies = [
+        i
+        for i in walk_ark
+        if i.category == MediaCategory.MOVIE and "_D01" in i.path.stem
+    ]
+    for disc in movies:
+        print(f"{disc.title} - {disc.path.parent.stem} - {disc.path}")
+        title = MakeMKV.get_main_title(disc)
+        print(
+            f"  Title: {title.id} Chapters: {title.chapters} Length: {title.length} Aspect: {title.aspect_ratio}"
+        )
+        extract_mkv(disc, Path(output), title.id)
+
+
+@cli.command()
+@click.option(
+    "-c",
+    "--collection",
+    is_flag=False,
+    default=None,
+    help="Directory containing video files",
+)
+@click.option("-o", "--output", is_flag=False, help="Output directory")
+def h265(collection: str, output: str):
+    """
+    Mirrors the collectoion directory with h265 encoded files
+    """
+
+    def process_hadbrake_log(log: str, dump_name: str) -> None:
+        false_positives = [
+            "disc.c:333: failed opening UDF image",
+            "disc.c:437: error opening file BDMV/index.bdmv",
+            "disc.c:437: error opening file BDMV/BACKUP/index.bdmv",
+            "libdvdread: DVDOpenFileUDF:UDFFindFile /VIDEO_TS/VIDEO_TS.IFO failed",
+            "libdvdnav: vm: vm: failed to read VIDEO_TS.IFO",
+            "0 decoder errors",
+            "ECMA 167 Volume Recognition failed",
+        ]
+
+        log_lines = [
+            i for i in log.splitlines() if all([fp not in i for fp in false_positives])
+        ]
+        error_list = [
+            i for i in log_lines if "fail" in i.lower() or "error" in i.lower()
+        ]
+        if len(error_list) > 0:
+            for e in error_list:
+                print(e)
+            with open(dump_name, "w") as f:
+                f.write(log)
+
+    def handbrake_encode(input: Path, output: Path) -> None:
+        handbrake_preset = str(
+            CONFIG.data_directory().joinpath("h265AutoRipMedMkv.json")
+        )
+        _cmd = [
+            "HandBrakeCLI",
+            "--main-feature",
+            "--preset-import-file",
+            handbrake_preset,
+            "-Z",
+            "h265AutoRipMedMkv",
+            "-i",
+            str(input),
+            "-o",
+            str(output),
+        ]
+        proc = subprocess.run(args=_cmd, text=True, stderr=subprocess.PIPE)
+        process_hadbrake_log(proc.stderr, output.with_suffix(".err.log").stem)
+
+    _collection = Path(collection)
+    _output = Path(output)
+
+    video_extensions = {".m4v", ".mkv", ".mp4"}
+
+    # Gather
+    in_files = [
+        Path(p).joinpath(ff)
+        for p, _, f in os.walk(_collection)
+        for ff in f
+        if Path(ff).suffix in video_extensions
+    ]
+
+    total = len(in_files)
+    for idx, file in enumerate(in_files):
+        out_file = Path(str(file).replace(str(_collection), str(_output)))
+        out_file.parent.mkdir(parents=True, exist_ok=True)
+        print(f"({idx + 1}/{total}) {file} -> {out_file}")
+        handbrake_encode(input=file, output=out_file)
 
 
 @cli.command()
 def makemkv():
     """flacify"""
     from rkiv.makemkv import MakeMKVBetaKeyParser
+
     parser = MakeMKVBetaKeyParser()
     click.echo(parser.scrape_reg_key())
 

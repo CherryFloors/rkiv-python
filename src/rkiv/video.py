@@ -219,7 +219,7 @@ class VideoRipper:
                 "-i",
                 str(self.drive.device_path),
                 "-o",
-                temp_dvd_output_holder,
+                str(temp_dvd_output_holder),
                 "-M",
                 "-v",
             ]

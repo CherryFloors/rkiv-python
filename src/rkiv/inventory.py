@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from enum import Enum
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
 
@@ -15,25 +15,91 @@ d = device.items()
 # def (dir: Path)
 
 
-def walk_disc_archive(root_path: Path) -> List["ArchivedDisc"]:
-    """
-    walk_disc_archive
+class MediaCategory(str, Enum):
+    """Media Category for classifying disc"""
 
-    TODO Handle iso images. Need a good lib to do this, https://pypi.org/project/pycdio/
-    looks good but has some deps that need to be built and installed separate. Should get
-    a deps.sh script togother and document in readme. Should include other eternals like
-    MakeMKV, abdcde, etc...
-    """
+    MUSIC = "music"
+    MOVIE = "movie"
+    TV = "tv"
 
-    if OpticalDiscType.categorize(dir=root_path):
-        return [ArchivedDisc.from_dir(dir=root_path)]
+    @classmethod
+    def to_categorical(cls) -> pandas.CategoricalDtype:
+        return pandas.CategoricalDtype(categories=[i.value for i in cls], ordered=False)
 
-    l = []
-    root, dirs, _ = next(os.walk(root_path))
-    for dir in [Path(root).joinpath(d) for d in dirs if d not in {""}]:
-        l += walk_disc_archive(root_path=dir)
 
-    return l
+@dataclass
+class StreamObject:
+    """Archived Disc Object"""
+
+    __slots__ = (
+        "title",
+        "path",
+        "category",
+        "match_name",
+    )
+
+    title: str
+    path: Path
+    category: MediaCategory
+    match_name: str
+
+    __annotations__ = {
+        "title": str,
+        "path": Path,
+        "category": MediaCategory,
+        "match_name": str,
+    }
+
+    def __init__(
+        self,
+        title: str,
+        path: Path,
+        category: MediaCategory,
+        match_name: str,
+    ) -> None:
+        self.title = title
+        self.path = path
+        self.category = category
+        self.match_name = match_name
+
+    @classmethod
+    def from_dir(cls, dir: Path) -> Optional["StreamObject"]:
+        """from_dir"""
+
+        season_in_stem = "Season_" in dir.stem
+        has_video_files = OpticalDiscType.categorize(dir=dir) == OpticalDiscType.FILES
+        if not (season_in_stem or has_video_files):
+            return None
+
+        parts = [i.lower() for i in dir.parts]
+        _title = _match_name = dir.stem
+
+        _category = MediaCategory.MUSIC
+        if "movie" in parts or "movies" in parts:
+            _category = MediaCategory.MOVIE
+        if "tv" in parts:
+            _category = MediaCategory.TV
+            suffix = dir.stem.removeprefix("Season_")
+            _title = dir.parent.stem
+            _match_name = f"{_title}_S{suffix}"
+
+        return cls(title=_title, path=dir, category=_category, match_name=_match_name)
+
+    @classmethod
+    def walk_stream_library(cls, root_path: Path) -> list["StreamObject"]:
+        """
+        Walks the stream library
+        """
+        _from_dir = cls.from_dir(dir=root_path)
+        if _from_dir is not None:
+            return [_from_dir]
+
+        l = []
+        root, dirs, _ = next(os.walk(root_path))
+        for dir in [Path(root).joinpath(d) for d in dirs if d not in {""}]:
+            l += cls.walk_stream_library(root_path=dir)
+
+        return l
 
 
 class OpticalDiscType(str, Enum):
@@ -56,7 +122,7 @@ class OpticalDiscType(str, Enum):
         BD_FILES = {"BDMV"}
         DVD_FILES = {"VIDEO_TS"}
         CD_EXTS = {"wav"}
-        FILES_EXTS = {"m4v", "mkv", "mp4"}
+        FILES_EXTS = {".m4v", ".mkv", ".mp4"}
 
         _, dirs, files = next(os.walk(dir))
 
@@ -74,18 +140,6 @@ class OpticalDiscType(str, Enum):
                 return cls.FILES
 
         return cls.UNDEFINED
-
-
-class MediaCategory(str, Enum):
-    """Media Category for classifying disc"""
-
-    MUSIC = "music"
-    MOVIE = "movie"
-    TV = "tv"
-
-    @classmethod
-    def to_categorical(cls) -> pandas.CategoricalDtype:
-        return pandas.CategoricalDtype(categories=[i.value for i in cls], ordered=False)
 
 
 @dataclass
@@ -185,6 +239,27 @@ class ArchivedDisc:
             iso=False,  # TODO Handle iso images
             problem=("problems" in parts) or ("problem" in parts),
         )
+
+    @classmethod
+    def walk_disc_archive(cls, root_path: Path) -> List["ArchivedDisc"]:
+        """
+        walk_disc_archive
+
+        TODO Handle iso images. Need a good lib to do this, https://pypi.org/project/pycdio/
+        looks good but has some deps that need to be built and installed separate. Should get
+        a deps.sh script togother and document in readme. Should include other eternals like
+        MakeMKV, abdcde, etc...
+        """
+
+        if OpticalDiscType.categorize(dir=root_path) != OpticalDiscType.UNDEFINED:
+            return [cls.from_dir(dir=root_path)]
+
+        l = []
+        root, dirs, _ = next(os.walk(root_path))
+        for dir in [Path(root).joinpath(d) for d in dirs if d not in {""}]:
+            l += cls.walk_disc_archive(root_path=dir)
+
+        return l
 
 
 @dataclass
