@@ -165,6 +165,11 @@ class Config:
         """Returns the data directory for rkiv"""
         return _rkiv_dir()
 
+    @staticmethod
+    def itunes_data() -> Path:
+        """Returns the data directory for rkiv"""
+        return _rkiv_dir().joinpath("itunes_data.dat")
+
     def save(self) -> None:
         """Write the config out to disk"""
 

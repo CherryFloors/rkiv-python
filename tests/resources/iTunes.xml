@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Major Version</key><integer>1</integer>
+	<key>Minor Version</key><integer>1</integer>
+	<key>Application Version</key><string>12.12.9.4</string>
+	<key>Date</key><date>2023-08-12T13:35:41Z</date>
+	<key>Features</key><integer>5</integer>
+	<key>Show Content Ratings</key><true/>
+	<key>Library Persistent ID</key><string>0C6442958291FA80</string>
+	<key>Tracks</key>
+	<dict>
+		<key>2175</key>
+		<dict>
+			<key>Track ID</key><integer>2175</integer>
+			<key>Size</key><integer>1405606</integer>
+			<key>Total Time</key><integer>71613</integer>
+			<key>Disc Number</key><integer>1</integer>
+			<key>Disc Count</key><integer>1</integer>
+			<key>Track Number</key><integer>1</integer>
+			<key>Track Count</key><integer>13</integer>
+			<key>Year</key><integer>1998</integer>
+			<key>Date Modified</key><date>2022-01-17T19:12:36Z</date>
+			<key>Date Added</key><date>2005-11-29T17:58:21Z</date>
+			<key>Bit Rate</key><integer>128</integer>
+			<key>Sample Rate</key><integer>44100</integer>
+			<key>Release Date</key><date>1998-09-29T07:00:00Z</date>
+			<key>Artwork Count</key><integer>1</integer>
+			<key>Persistent ID</key><string>DAA2333E52D5B300</string>
+			<key>Explicit</key><true/>
+			<key>Track Type</key><string>File</string>
+			<key>Protected</key><true/>
+			<key>Purchased</key><true/>
+			<key>File Folder Count</key><integer>5</integer>
+			<key>Library Folder Count</key><integer>1</integer>
+			<key>Name</key><string>Intro</string>
+			<key>Artist</key><string>Black Star</string>
+			<key>Album Artist</key><string>Black Star</string>
+			<key>Composer</key><string>Mos Def &#38; Talib Kweli</string>
+			<key>Album</key><string>Mos Def &#38; Talib Kweli Are Black Star</string>
+			<key>Genre</key><string>Hip-Hop/Rap</string>
+			<key>Kind</key><string>Protected AAC audio file</string>
+			<key>Sort Name</key><string>Intro</string>
+			<key>Sort Album</key><string>Mos Def &#38; Talib Kweli Are Black Star</string>
+			<key>Sort Artist</key><string>Black Star</string>
+			<key>Location</key><string>file://localhost/C:/Users/Ryan/Music/iTunes/iTunes%20Media/Music/Black%20Star/Mos%20Def%20&#38;%20Talib%20Kweli%20Are%20Black%20Star/01%20Intro.m4p</string>
+		</dict>
+		<key>93534</key>
+		<dict>
+			<key>Track ID</key><integer>93534</integer>
+			<key>Size</key><integer>41664221</integer>
+			<key>Total Time</key><integer>336640</integer>
+			<key>Disc Number</key><integer>3</integer>
+			<key>Disc Count</key><integer>3</integer>
+			<key>Track Number</key><integer>11</integer>
+			<key>Track Count</key><integer>11</integer>
+			<key>Year</key><integer>2023</integer>
+			<key>Date Modified</key><date>2023-08-12T13:25:26Z</date>
+			<key>Date Added</key><date>2023-08-12T13:33:38Z</date>
+			<key>Bit Rate</key><integer>1411</integer>
+			<key>Sample Rate</key><integer>44100</integer>
+			<key>Release Date</key><date>2023-07-28T12:00:00Z</date>
+			<key>Artwork Count</key><integer>1</integer>
+			<key>Persistent ID</key><string>CB177D9D7B31D654</string>
+			<key>Track Type</key><string>File</string>
+			<key>File Folder Count</key><integer>5</integer>
+			<key>Library Folder Count</key><integer>1</integer>
+			<key>Name</key><string>U.S. Blues (Uptown Theatre, Chicago, IL 12/4/79)</string>
+			<key>Artist</key><string>Grateful Dead</string>
+			<key>Album Artist</key><string>Grateful Dead</string>
+			<key>Album</key><string>1979.09.12 Dave's Picks Volume 47 : Kiel Auditorium, St. Louis, MO</string>
+			<key>Kind</key><string>Apple Lossless audio file</string>
+			<key>Sort Artist</key><string>Grateful Dead</string>
+			<key>Sort Album Artist</key><string>Grateful Dead</string>
+			<key>Location</key><string>file://localhost/C:/Users/Ryan/Music/iTunes/iTunes%20Media/Music/Grateful%20Dead/1979.09.12%20Dave's%20Picks%20Volume%2047%20_%20Kiel/3-11%20U.S.%20Blues%20(Uptown%20Theatre,%20Chi.m4a</string>
+		</dict>
+	</dict>
+	<key>Playlists</key>
+	<array>
+		<dict>
+			<key>Master</key><true/>
+			<key>Playlist ID</key><integer>35225</integer>
+			<key>Playlist Persistent ID</key><string>B98C46D9061D489E</string>
+			<key>All Items</key><true/>
+			<key>Visible</key><false/>
+			<key>Name</key><string>Library</string>
+			<key>Playlist Items</key>
+			<array>
+				<dict>
+					<key>Track ID</key><integer>2175</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2177</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2179</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2181</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2183</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2185</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2187</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2189</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2191</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2193</integer>
+				</dict>
+			</array>
+		</dict>
+		<dict>
+			<key>Playlist ID</key><integer>51474</integer>
+			<key>Playlist Persistent ID</key><string>9715A648408CCFA0</string>
+			<key>Distinguished Kind</key><integer>65</integer>
+			<key>All Items</key><true/>
+			<key>Name</key><string>Downloaded</string>
+			<key>Smart Info</key>
+			<data>
+			AQEAAwAAAAIAAAAZAAAAAAAAAAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+			AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+			AAAAAA==
+			</data>
+			<key>Smart Criteria</key>
+			<data>
+			U0xzdAABAAEAAAADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+			AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+			AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADwAAAQAAAAAAAAAAAAAAAAAAAAAAAAA
+			AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABEAAAAAAAQIbEAAAAAAAAAAAAAAAAAAAAB
+			AAAAAAAQIbEAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8AgAEAAAA
+			AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAARAAAAAAAIIAE
+			AAAAAAAAAAAAAAAAAAAAAQAAAAAAIIAEAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAA
+			AAAAAAAAAAAAhQAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+			AAAAAAAAAEQAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAQAAAAAAAAAAAAAAAAAA
+			AAEAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+			</data>
+			<key>Playlist Items</key>
+			<array>
+				<dict>
+					<key>Track ID</key><integer>2439</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2591</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>2207</integer>
+				</dict>
+			</array>
+			<key>Genius Track ID</key><integer>8943</integer>
+		</dict>
+		<dict>
+			<key>Playlist ID</key><integer>87085</integer>
+			<key>Playlist Persistent ID</key><string>1339D3B69FBBC31A</string>
+			<key>All Items</key><true/>
+			<key>Name</key><string>0110</string>
+			<key>Playlist Items</key>
+			<array>
+				<dict>
+					<key>Track ID</key><integer>10937</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10063</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10923</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10071</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10945</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10057</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10935</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10055</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10927</integer>
+				</dict>
+				<dict>
+					<key>Track ID</key><integer>10069</integer>
+				</dict>
+			</array>
+		</dict>
+	</array>
+	<key>Music Folder</key><string>file://localhost/C:/Users/Ryan/Music/iTunes/iTunes%20Media/</string>
+</dict>
+</plist>

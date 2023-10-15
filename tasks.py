@@ -3,7 +3,7 @@ from invoke import task
 
 @task
 def test(ctx):
-    ctx.run("pytest --cov --cov-fail-under=10", echo=True)
+    ctx.run("pytest --cov --cov-fail-under=10", echo=True, pty=True)
 
 
 @task

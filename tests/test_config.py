@@ -15,8 +15,8 @@ class TestConfig:
         assert c.mpd_dir == config._user_config_dir().joinpath("mpd")
         assert c.abcde_config == config._rkiv_dir().joinpath("abcde.conf")
         assert c.video_archives == [Path.home().joinpath("Archive")]
-        assert c.video_streams == [Path.home().joinpath("Music")]
-        assert c.audio_streams == [Path.home().joinpath("Videos")]
+        assert c.video_streams == [Path.home().joinpath("Videos")]
+        assert c.audio_streams == [Path.home().joinpath("Music")]
 
     @staticmethod
     def test_overload_config() -> None:

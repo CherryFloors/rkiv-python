@@ -17,11 +17,16 @@ from rkiv.audio import auto_audio_ripper, audio_rip_dash
 from rkiv import opticaldevices
 from rkiv.inventory import ArchivedDisc, MediaCategory
 from rkiv.makemkv import MakeMKV, extract_mkv
+from rkiv import itunes as _itunes
 
 CONFIG = Config()
 
 
 @click.version_option(version=__version__)
+@click.group()
+def cli():
+    pass
+
 @click.group()
 def cli():
     pass
@@ -90,6 +95,13 @@ def inventory() -> None:
     pass
     # stat
 
+@cli.command()
+def itunes() -> None:
+    """
+    exports itunes playlists
+    """
+    itdf = _itunes.ITunesLibraryDataFrame.from_itunes_xml()
+    itdf.export_playlists()
 
 @cli.command()
 @click.option(
