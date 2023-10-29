@@ -1,10 +1,10 @@
 import json
 import time
+import os
 from datetime import datetime, timedelta
 from multiprocessing import Process
 from urllib.request import urlopen
 from typing import Optional
-import os
 import subprocess
 
 from pydvdid import compute  # type: ignore
@@ -23,10 +23,6 @@ CONFIG = Config()
 
 
 @click.version_option(version=__version__)
-@click.group()
-def cli():
-    pass
-
 @click.group()
 def cli():
     pass
@@ -95,13 +91,66 @@ def inventory() -> None:
     pass
     # stat
 
-@cli.command()
+
+@cli.group()
 def itunes() -> None:
     """
-    exports itunes playlists
+    itunes related commands
     """
-    itdf = _itunes.ITunesLibraryDataFrame.from_itunes_xml()
-    itdf.export_playlists()
+    pass
+
+
+@itunes.command()
+@click.option(
+    "-m",
+    "--modified",
+    is_flag=False,
+    default=None,
+    help="Over ride modified algorithm by passing list of albums",
+)
+def compare(modified: Optional[str]) -> None:
+    if modified is not None:
+        modified = modified.split(",")
+    _itunes.ITunesLibraryDataFrame.compare(modified=modified)
+
+
+@itunes.command()
+@click.option(
+    "-m",
+    "--modified",
+    is_flag=False,
+    default=None,
+    help="Over ride modified algorithm by passing list of albums",
+)
+def update(modified: Optional[str]) -> None:
+    """Updates the music stream based on the iTunes XML"""
+    if modified is not None:
+        modified = modified.split(",")
+    _itunes.ITunesLibraryDataFrame.update(modified)
+
+
+@itunes.command()
+def repair() -> None:
+    """Attempts to repair missing and extra files"""
+    _itunes.ITunesLibraryDataFrame.repair()
+
+
+@cli.command()
+def release() -> None:
+    """
+    releases movies
+    """
+    unreleased = CONFIG.video_streams[0].parent.joinpath("unreleased")
+    movies = [Path(r).joinpath(ff) for r, _, f in os.walk(unreleased) for ff in f]
+    for movie in movies:
+        new_path = str(movie.parent).replace(
+            str(unreleased), str(CONFIG.video_streams[0])
+        )
+        movie.touch()
+        movie.parent.touch()
+        click.echo(f"{movie.parent} -> {new_path}")
+        movie.parent.rename(new_path)
+
 
 @cli.command()
 @click.option(

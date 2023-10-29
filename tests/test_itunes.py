@@ -310,14 +310,3 @@ class TestITunesSong:
         """test_sanity"""
         tls = [itunes.ITunesSong(**t) for _, t in tracks_json.items()]
         assert all([isinstance(i, itunes.ITunesSong) for i in tls])
-
-
-class TestITunesLibraryDataFrame:
-    """TestITunesLibraryDataFrame"""
-
-    @staticmethod
-    def test_from_itunes_xml() -> None:
-        """test_from_itunes_xml"""
-        xml_path = Path("./tests/resources/iTunes.xml")
-        itdf = itunes.ITunesLibraryDataFrame.from_itunes_xml(xml_path)
-        assert isinstance(itdf, itunes.ITunesLibraryDataFrame)

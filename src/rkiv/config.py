@@ -170,6 +170,10 @@ class Config:
         """Returns the data directory for rkiv"""
         return _rkiv_dir().joinpath("itunes_data.dat")
 
+    def itunes_music(self) -> Path:
+        """Returns the data directory for rkiv"""
+        return self.itunes_dir.joinpath("iTunes Media").joinpath("Music")
+
     def save(self) -> None:
         """Write the config out to disk"""
 
