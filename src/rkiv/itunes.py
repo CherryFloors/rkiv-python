@@ -197,7 +197,7 @@ class ITunesSong(BaseModel):
     date_modified: Optional[datetime] = None
     loved: Optional[bool] = None
     compilation: Optional[bool] = None
-    stream_path: Optional[Path]
+    stream_path: Optional[Path] = None
 
     __annotations__ = {
         "track_id": int,

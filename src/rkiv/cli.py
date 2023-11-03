@@ -56,22 +56,22 @@ def arm(dev):
 
 @cli.command()
 def audio():
-    click.secho("rkiv Audio Ripper", fg="green")
+    click.secho("rkiv Audio Ripper\n", bold=True, underline=True)
 
-    ActiveDriveList = opticaldevices.get_optical_drives()
-    ProcList = [Process(target=auto_audio_ripper, args=(d,)) for d in ActiveDriveList]
+    active_drives = opticaldevices.get_optical_drives()
+    procs = [Process(target=auto_audio_ripper, args=(d,)) for d in active_drives]
 
-    for prc in ProcList:
+    for prc in procs:
         prc.start()
 
-    DriveProgress, ResetCursor = audio_rip_dash(ActiveDriveList)
-    click.echo(DriveProgress)
+    drive_progress, reset_cursor = audio_rip_dash(active_drives)
+    click.echo(drive_progress)
 
     while True:
         time.sleep(5)
-        DriveProgress, ResetCursor = audio_rip_dash(ActiveDriveList)
-        click.echo(ResetCursor)
-        click.echo(DriveProgress)
+        drive_progress, reset_cursor = audio_rip_dash(active_drives)
+        click.echo(reset_cursor)
+        click.echo(drive_progress)
 
 
 @cli.command()

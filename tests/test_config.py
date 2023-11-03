@@ -17,6 +17,7 @@ class TestConfig:
         assert c.video_archives == [Path.home().joinpath("Archive")]
         assert c.video_streams == [Path.home().joinpath("Videos")]
         assert c.audio_streams == [Path.home().joinpath("Music")]
+        assert c.editor == None
 
     @staticmethod
     def test_overload_config() -> None:
@@ -32,6 +33,7 @@ class TestConfig:
             "video_archives": ["too", "goo"],
             "video_streams": ["yoo", "doo"],
             "audio_streams": ["uoo", "loo"],
+            "editor": "vim",
         }
 
         c = config.Config(load=False)

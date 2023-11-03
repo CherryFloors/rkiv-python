@@ -7,6 +7,8 @@ from typing import Tuple, List, Optional
 from datetime import datetime, timezone
 from pathlib import Path
 
+import click
+
 from rkiv.config import Config
 from rkiv.opticaldevices import OpticalDrive
 
@@ -82,6 +84,8 @@ def convert_to_alac(
 
 
 def audio_rip_dash(drive_list: List[OpticalDrive]) -> Tuple[str, str]:
+    prog_char = click.style("=", fg="green")
+    empty = click.style("X", fg="red")
     # Calculate reset
     reset_cursor = "\033[F" * (5 + len(drive_list))
     prog_bar_w = 20
@@ -105,12 +109,12 @@ def audio_rip_dash(drive_list: List[OpticalDrive]) -> Tuple[str, str]:
                 ]
             )
             n_prg = int((ripped / total) * prog_bar_w)
-            s_prg = "#" * n_prg
+            s_prg = prog_char * n_prg
             fill = " " * (prog_bar_w - n_prg)
             drive_progress = f"{drive_progress}{drv.device_name}: [{s_prg}{fill}] ({ripped}/{total})\n"
         else:
             fill = " " * (prog_bar_w + 9)
-            drive_progress = f"{drive_progress}{drv.device_name}: X{fill}\n"
+            drive_progress = f"{drive_progress}{drv.device_name}: {empty}{fill}\n"
     # Get disk space
     out = subprocess.run(["df", "-h", CONFIG.workspace], capture_output=True, text=True)
     drive_progress = f"{drive_progress}\n{out.stdout}"

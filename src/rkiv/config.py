@@ -1,6 +1,6 @@
 import os
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -35,6 +35,7 @@ class Config:
         "video_archives",
         "video_streams",
         "audio_streams",
+        "editor",
     )
 
     workspace: Path
@@ -46,6 +47,7 @@ class Config:
     video_archives: List[Path]
     video_streams: List[Path]
     audio_streams: List[Path]
+    editor: Optional[Path]
 
     __annotations__ = {
         "workspace": Path,
@@ -57,6 +59,7 @@ class Config:
         "video_archives": List[Path],
         "video_streams": List[Path],
         "audio_streams": List[Path],
+        "editor": Optional[Path],
     }
 
     def _overrides(self, conf: dict) -> None:
@@ -86,6 +89,10 @@ class Config:
         if _abcde_config is not None:
             setattr(self, "abcde_config", _resolve_path(_abcde_config))
 
+        _editor = conf.get("editor")
+        if _editor is not None:
+            setattr(self, "editor", _resolve_path(_editor))
+        
         _video_archives = conf.get("video_archives")
         if _video_archives is not None:
             setattr(
@@ -120,6 +127,7 @@ class Config:
         self.video_archives = [Path.home().joinpath("Archive")]
         self.video_streams = [Path.home().joinpath("Videos")]
         self.audio_streams = [Path.home().joinpath("Music")]
+        self.editor = None
 
         if load:
             conf_path = _conf_path()
@@ -158,6 +166,7 @@ class Config:
             "video_archives": [str(i) for i in self.video_archives],
             "video_streams": [str(i) for i in self.video_streams],
             "audio_streams": [str(i) for i in self.audio_streams],
+            "editor": str(self.editor),
         }
 
     @staticmethod

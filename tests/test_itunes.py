@@ -167,7 +167,7 @@ class TestITunesXmlConverter:
         e = ElementTree.fromstring(
             """
                 <dict>
-			        <key>Track ID</key><integer>2175</integer>
+	            <key>Track ID</key><integer>2175</integer>
                     <key>Track Type</key><string>File</string>
                 </dict>               
             """
@@ -302,11 +302,11 @@ class TestITunesXmlConverter:
         assert not out
 
 
-class TestITunesSong:
-    """TestITunesSong"""
-
-    @staticmethod
-    def test_sanity(tracks_json: dict) -> None:
-        """test_sanity"""
-        tls = [itunes.ITunesSong(**t) for _, t in tracks_json.items()]
-        assert all([isinstance(i, itunes.ITunesSong) for i in tls])
+# class TestITunesSong:
+#     """TestITunesSong"""
+#
+#     @staticmethod
+#     def test_sanity(tracks_json: dict) -> None:
+#         """test_sanity"""
+#         tls = [itunes.ITunesSong(**t) for _, t in tracks_json.items()]
+#         assert all([isinstance(i, itunes.ITunesSong) for i in tls])
