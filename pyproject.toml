@@ -17,6 +17,7 @@ pydvdid = "^1.1"
 pyudev = "^0.24.1"
 r128gain = "^1.0.7"
 pycdio = "^2.1.1"
+thefuzz = "^0.20.0"
 
 [tool.poetry.scripts]
 rkiv = "rkiv.cli:cli"

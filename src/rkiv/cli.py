@@ -338,7 +338,20 @@ def collector(scrape: bool) -> None:
     gathers and manages movie collectoions including Ebert's favorites,
     Dinner and a Movie, and The Rewatchables
     """
-    click.secho("collector")
+    click.secho("The Collector")
 
-    if scrape:
-        click.secho("You have picked scrape")
+    from rkiv.collector import TheRewatchables, JellyfinCollection
+
+    rewatchables = TheRewatchables.scrape()
+    collection_df = rewatchables.match_jellyfin_library()
+
+    rewatch = JellyfinCollection.load_by_name(
+        rewatchables.collection_name, rewatchables.defualt_collection()
+    )
+
+    new_additions = rewatch.update(collection_df)
+    rewatch.save()
+
+    num = click.style(str(len(new_additions)), fg="green")
+    click.echo(f"Added {num} new matches")
+    click.echo(collection_df.table_summary())

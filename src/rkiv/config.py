@@ -92,7 +92,7 @@ class Config:
         _editor = conf.get("editor")
         if _editor is not None:
             setattr(self, "editor", _resolve_path(_editor))
-        
+
         _video_archives = conf.get("video_archives")
         if _video_archives is not None:
             setattr(

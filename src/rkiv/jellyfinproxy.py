@@ -4,6 +4,7 @@ import requests
 from enum import Enum
 from typing import List
 from datetime import datetime
+from pathlib import Path
 
 import pydantic
 from jellyfin_apiclient_python import JellyfinClient  # type: ignore
@@ -20,6 +21,7 @@ class JellyfinMovie(pydantic.BaseModel):
     DateCreated: str
     Container: str
     PremiereDate: str = ""
+    Path: Path
     CriticRating: int = -1
     OfficialRating: str = ""
     Overview: str = ""
@@ -122,8 +124,10 @@ class _JellyfinProxy:
         """Get list of jellyfi movies"""
         folder_id = [i.Id for i in self.get_media_folders() if i.Name == "Movies"][0]
         folder_items = self._client.jellyfin.users(
-            "/Items", params={"parentId": folder_id, "Fields": "DateCreated, Overview"}
+            "/Items",
+            params={"parentId": folder_id, "Fields": "DateCreated, Overview, Path"},
         )["Items"]
+
         return [JellyfinMovie(**i) for i in folder_items if i["Type"] == "Movie"]
 
     def get_latest_movies(
