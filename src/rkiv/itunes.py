@@ -464,7 +464,7 @@ class ITunesLibraryDataFrame:
         self.tracks["_temp"] = (
             self.tracks["_temp"]
             .str.replace(
-                "file://localhost/C:/Users/Ryan/Music/iTunes", str(CONFIG.itunes_dir)
+                "file://localhost/C:/Users/ryan/Music/iTunes", str(CONFIG.itunes_dir)
             )
             .str.lower()
         )
