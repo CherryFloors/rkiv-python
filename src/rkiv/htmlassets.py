@@ -28,7 +28,9 @@ class HTMLTemplates:
     @staticmethod
     def album_artist_title(album: str, artist: str) -> str:
         """Generate a div with the Album Name and Artist"""
-        return f'<div style="flex-direction: column; display:flex; flex-wrap:wrap"><h2>{album}</h2><h3>{artist}</h3></div>'
+        return (
+            f'<div style="flex-direction: column; display:flex; flex-wrap:wrap"><h2>{album}</h2><h3>{artist}</h3></div>'
+        )
 
     @staticmethod
     def media_info_item(info: str) -> str:
@@ -52,7 +54,9 @@ class HTMLTemplates:
     @staticmethod
     def media_banner_wrapper(title: str, media_info: str) -> str:
         """Div wrapper for media banner"""
-        return f'<div style="padding: 0px 0px 0px 3px; background-color: #232425; color: D1D1D1">{title}{media_info}</div>'
+        return (
+            f'<div style="padding: 0px 0px 0px 3px; background-color: #232425; color: D1D1D1">{title}{media_info}</div>'
+        )
 
     @staticmethod
     def movie_image_div(image_url: str) -> str:
@@ -69,15 +73,24 @@ class HTMLTemplates:
         return f'<p style="padding: 0px 5px 0px 5px;">{overview}</p>'
 
     @staticmethod
-    def freshjelly(movies_html: str) -> str:
+    def freshjelly(greeting: str, movies_html: str, series_html: str) -> str:
         s = "<!DOCTYPE html>"
         s += "<html>"
         s += "<head>"
         s += '<meta name="viewport" content="width=device-width, initial-scale=1">'
         s += "</head>"
         s += '<body style="background-color: #f6f6f6; font-family: sans-serif; -webkit-font-smoothing: antialiased; line-height: 1.4; margin: 0; padding: 0; -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%;">'
-        s += '<h1 style="color: #00A4DC; margin-left: 20">Movies</h1>'
-        s += movies_html
+
+        s += greeting
+
+        if movies_html != "":
+            s += '<h1 style="color: #00A4DC; margin-left: 20">Movies</h1>'
+            s += movies_html
+
+        if series_html != "":
+            s += '<h1 style="color: #00A4DC; margin-left: 20">TV Shows</h1>'
+            s += series_html
+
         s += "</body>"
         s += "</html>"
         return s

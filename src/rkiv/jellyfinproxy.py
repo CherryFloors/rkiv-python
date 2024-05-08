@@ -29,6 +29,7 @@ class JellyfinMovie(pydantic.BaseModel):
     RunTimeTicks: int
     ProductionYear: int
     IsFolder: bool
+    Tags: set[str]
 
     @property
     def date_added(self) -> datetime:
@@ -59,6 +60,57 @@ class JellyfinMovie(pydantic.BaseModel):
         image_url = JellyfinProxy.get_movie_img_url(self.Id)
         s = HTMLTemplates.movie_image_div(image_url=image_url)
         s += self.movie_info_banner()
+        s += HTMLTemplates.movie_summary(self.Overview)
+        return HTMLTemplates.movie_card(s)
+
+
+class JellyfinItem(pydantic.BaseModel):
+    """JellyfinItem Base class for jellyfin media"""
+
+    Name: str
+    ServerId: str
+    Id: str
+    DateCreated: str
+    PremiereDate: str = ""
+    Path: Path
+    CriticRating: int = -1
+    OfficialRating: str = ""
+    Overview: str = ""
+    CommunityRating: float = -1.0
+    RunTimeTicks: int
+    ProductionYear: int
+    IsFolder: bool
+    Tags: set[str]
+
+    @property
+    def date_added(self) -> datetime:
+        """date added"""
+        return datetime.strptime(self.DateCreated.split("T")[0], "%Y-%m-%d")
+
+    @property
+    def running_time(self) -> str:
+        """running_time"""
+        sec = self.RunTimeTicks * (1 / 10_000_000)
+        hours = int(sec / 3600)
+        minutes = int((sec - hours * 3600) / 60)
+        return f"{hours}h {minutes}m"
+
+    def media_info_banner(self) -> str:
+        """HTML info banner"""
+        s = HTMLTemplates.media_info_item(str(self.ProductionYear))
+        s += HTMLTemplates.media_info_item(self.running_time)
+        s += HTMLTemplates.official_rating(self.OfficialRating)
+        s += HTMLTemplates.star_rating(round(self.CommunityRating, 1))
+        s += HTMLTemplates.get_critic_rating_div(self.CriticRating)
+        media_info = HTMLTemplates.media_info_wrapper(s)
+        title = HTMLTemplates.movie_tv_title(self.Name)
+        return HTMLTemplates.media_banner_wrapper(title, media_info)
+
+    def to_html(self) -> str:
+        """Produces an html card of the item"""
+        image_url = JellyfinProxy.get_movie_img_url(self.Id)
+        s = HTMLTemplates.movie_image_div(image_url=image_url)
+        s += self.media_info_banner()
         s += HTMLTemplates.movie_summary(self.Overview)
         return HTMLTemplates.movie_card(s)
 
@@ -115,39 +167,64 @@ class _JellyfinProxy:
 
     def get_media_folders(self) -> List[JellyfinFolders]:
         """Return list of media folders"""
-        return [
-            JellyfinFolders(**i)
-            for i in self._client.jellyfin.get_media_folders()["Items"]
-        ]
+        return [JellyfinFolders(**i) for i in self._client.jellyfin.get_media_folders()["Items"]]
 
-    def get_movies(self) -> List[JellyfinMovie]:
+    def get_tags(self) -> set[str]:
+        """
+        returns a set of jellyfin media tags
+        - `patterns`: list of strings to match. Partial matches and case insensitve by default
+        """
+        folder_id = [i.Id for i in self.get_media_folders() if i.Name == "Movies"][0]
+        filters = JellyfinProxy._client.jellyfin.items(
+            "/Filters",
+            params={"parentId": folder_id, "includeItemTypes": "Movie"},
+        )
+        return {t.lower() for t in filters["Tags"]}
+
+    def get_movies(self) -> list[JellyfinMovie]:
         """Get list of jellyfi movies"""
         folder_id = [i.Id for i in self.get_media_folders() if i.Name == "Movies"][0]
         folder_items = self._client.jellyfin.users(
             "/Items",
-            params={"parentId": folder_id, "Fields": "DateCreated, Overview, Path"},
+            params={
+                "parentId": folder_id,
+                "Fields": "DateCreated, Overview, Path, Tags",
+            },
         )["Items"]
 
         return [JellyfinMovie(**i) for i in folder_items if i["Type"] == "Movie"]
 
-    def get_latest_movies(
-        self, start_time: datetime, end_time: datetime
-    ) -> List[JellyfinMovie]:
+    def get_latest_movies(self, start_time: datetime, end_time: datetime) -> List[JellyfinMovie]:
         """Latest movies"""
         movies = self.get_movies()
         return sorted(
-            [
-                movie
-                for movie in movies
-                if movie.date_added >= start_time and movie.date_added <= end_time
-            ],
+            [movie for movie in movies if movie.date_added >= start_time and movie.date_added <= end_time],
             key=lambda x: x.date_added,
             reverse=True,
         )
 
-    def get_asset_art_webp(
-        self, id: str, height: int = 300, width: int = 200, quality: int = 16
-    ) -> bytes:
+    def get_series(self) -> list[JellyfinItem]:
+        """Get list of jellyfi movies"""
+        folder_id = [i.Id for i in self.get_media_folders() if i.Name == "TV Shows"][0]
+        folder_items = self._client.jellyfin.users(
+            "/Items",
+            params={
+                "parentId": folder_id,
+                "Fields": "DateCreated, Overview, Path, Tags",
+            },
+        )["Items"]
+        return [JellyfinItem(**i) for i in folder_items if i["Type"] == "Series"]
+
+    def get_latest_series(self, start_time: datetime, end_time: datetime) -> List[JellyfinItem]:
+        """Latest series"""
+        all_series = self.get_series()
+        return sorted(
+            [series for series in all_series if series.date_added >= start_time and series.date_added <= end_time],
+            key=lambda x: x.date_added,
+            reverse=True,
+        )
+
+    def get_asset_art_webp(self, id: str, height: int = 300, width: int = 200, quality: int = 16) -> bytes:
         """get_asset_art"""
         url = f"http://localhost:8096/Items/{id}/Images/Primary?fillHeight={height}&fillWidth={width}&quality={quality}"
         img = requests.get(url=url).content

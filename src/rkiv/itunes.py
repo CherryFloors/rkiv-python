@@ -101,10 +101,7 @@ class ITunesXmlConverter:
     @classmethod
     def _dict(cls, e: ElementTree.Element) -> dict:
         """Parse a dict type element"""
-        return {
-            cls.convert_element(k): cls.convert_element(v)
-            for k, v in unzip(e.findall("./"))
-        }
+        return {cls.convert_element(k): cls.convert_element(v) for k, v in unzip(e.findall("./"))}
 
     @classmethod
     def get_type(cls, xml_type: str) -> Union[type, str]:
@@ -112,9 +109,7 @@ class ITunesXmlConverter:
         return cls.DTYPES[xml_type]
 
     @classmethod
-    def convert_element(
-        cls, element: ElementTree.Element
-    ) -> Union[dict, list, str, float, int, bool, datetime]:
+    def convert_element(cls, element: ElementTree.Element) -> Union[dict, list, str, float, int, bool, datetime]:
         """Convert iTunes xml value to python/pandas type"""
         LOGIC: dict[str, Callable] = {
             "dict": cls._dict,
@@ -412,7 +407,7 @@ class ITunesLibraryDataFrame:
         _playlists = obj["playlists"]
         _date = obj["date"]
 
-        _date_mod = [d for d in obj["tracks"]["date_modified"]]
+        _ = [d for d in obj["tracks"]["date_modified"]]
         return cls(
             tracks=pandas.DataFrame(_tracks),
             playlists=pandas.DataFrame(_playlists),
@@ -437,20 +432,12 @@ class ITunesLibraryDataFrame:
     @staticmethod
     def files_in_archive() -> list[str]:
         """Returns a list of the files in the iTunes Music archive"""
-        return [
-            os.path.join(r, ff)
-            for r, _, f in os.walk(CONFIG.itunes_music())
-            for ff in f
-        ]
+        return [os.path.join(r, ff) for r, _, f in os.walk(CONFIG.itunes_music()) for ff in f]
 
     @staticmethod
     def files_in_stream() -> list[str]:
         """Returns a list of the files in the audio stream"""
-        return [
-            os.path.join(r, ff)
-            for r, _, f in os.walk(CONFIG.audio_streams[0])
-            for ff in f
-        ]
+        return [os.path.join(r, ff) for r, _, f in os.walk(CONFIG.audio_streams[0]) for ff in f]
 
     def _archive_paths(self, files: list[str]) -> None:
         """
@@ -463,15 +450,11 @@ class ITunesLibraryDataFrame:
         self.tracks["_temp"] = self.tracks["location"].apply(urllib.parse.unquote)
         self.tracks["_temp"] = (
             self.tracks["_temp"]
-            .str.replace(
-                "file://localhost/C:/Users/ryan/Music/iTunes", str(CONFIG.itunes_dir)
-            )
+            .str.replace("file://localhost/C:/Users/ryan/Music/iTunes", str(CONFIG.itunes_dir))
             .str.lower()
         )
 
-        self.tracks["archive_path"] = self.tracks.merge(files, how="outer", on="_temp")[
-            "archive_path"
-        ]
+        self.tracks["archive_path"] = self.tracks.merge(files, how="outer", on="_temp")["archive_path"]
         self.tracks.drop(columns="_temp")
 
         return None
@@ -496,9 +479,7 @@ class ITunesLibraryDataFrame:
     def update_stream_paths(self) -> None:
         """Updates the stream paths in the tracks df"""
 
-        self.tracks["stream_path"] = self.tracks["archive_path"].apply(
-            self._stream_paths
-        )
+        self.tracks["stream_path"] = self.tracks["archive_path"].apply(self._stream_paths)
 
     @classmethod
     def _process_xml(cls, it_xml: ElementTree.ElementTree) -> "ITunesLibraryDataFrame":
@@ -508,9 +489,7 @@ class ITunesLibraryDataFrame:
 
         for playlist in _dict["playlists"]:
             if "playlist_items" in playlist.keys():
-                playlist["playlist_items"] = [
-                    t["track_id"] for t in playlist["playlist_items"]
-                ]
+                playlist["playlist_items"] = [t["track_id"] for t in playlist["playlist_items"]]
 
         itdf = cls(
             tracks=pandas.DataFrame(data=_dict["tracks"].values()),
@@ -559,9 +538,7 @@ class ITunesLibraryDataFrame:
             return pickle.load(f)
 
     @classmethod
-    def from_itunes_xml(
-        cls, xml_path_override: Optional[Path] = None
-    ) -> "ITunesLibraryDataFrame":
+    def from_itunes_xml(cls, xml_path_override: Optional[Path] = None) -> "ITunesLibraryDataFrame":
         """Build from an iTunes XML"""
 
         xml_path = CONFIG.itunes_dir.joinpath("iTunes Music Library.xml")
@@ -580,11 +557,7 @@ class ITunesLibraryDataFrame:
         not_library = self.playlists["name"] != "Library"
 
         for _, playlist in self.playlists[has_playlist & not_library].iterrows():
-            plist = (
-                CONFIG.mpd_dir.joinpath("playlists")
-                .joinpath(playlist["name"])
-                .with_suffix(".m3u")
-            )
+            plist = CONFIG.mpd_dir.joinpath("playlists").joinpath(playlist["name"]).with_suffix(".m3u")
             songs = [
                 str(self.tracks[self.tracks["track_id"] == id]["stream_path"].iloc[0])
                 for id in playlist["playlist_items"]
@@ -602,14 +575,10 @@ class ITunesLibraryDataFrame:
     def removed_files(self, old_itdf: "ITunesLibraryDataFrame") -> list[ITunesSong]:
         """Returns a list of removed itunes songs"""
         # Removed files are found by checking for persistent ids not in the new df
-        removed_songs = ~old_itdf.tracks["persistent_id"].isin(
-            self.tracks["persistent_id"]
-        )
+        removed_songs = ~old_itdf.tracks["persistent_id"].isin(self.tracks["persistent_id"])
         return ITunesSong.from_dataframe(old_itdf.tracks.loc[removed_songs])
 
-    def modified_files(
-        self, old_itdf: "ITunesLibraryDataFrame", mod: Optional[list[str]] = None
-    ) -> list[ITunesSong]:
+    def modified_files(self, old_itdf: "ITunesLibraryDataFrame", mod: Optional[list[str]] = None) -> list[ITunesSong]:
         """
         Returns a list of modified itunes songs
 
@@ -621,12 +590,10 @@ class ITunesLibraryDataFrame:
             modified_songs = self.tracks["album"].isin(mod)
             return ITunesSong.from_dataframe(self.tracks[modified_songs])
 
-        # TODO(Ryan) add entire album to modified list, not just songs
+        # TODO(Ryan): add entire album to modified list, not just songs
         # Modified songs are found by checking for persistent ids that exist in both
         # dataframes but have a different modified date
-        existing_songs = self.tracks["persistent_id"].isin(
-            old_itdf.tracks["persistent_id"]
-        )
+        existing_songs = self.tracks["persistent_id"].isin(old_itdf.tracks["persistent_id"])
 
         merged = self.tracks[existing_songs].merge(
             old_itdf.tracks.filter(["date_modified", "persistent_id"]),
@@ -655,9 +622,7 @@ class ITunesLibraryDataFrame:
         date = next(v for k, v in unzip(it_xml.findall("./dict/")) if k.text == "Date")
         return ITunesXmlConverter._date(e=date)
 
-    def diff(
-        self, older_itdf: "ITunesLibraryDataFrame", mod: Optional[list[str]] = None
-    ) -> ITunesDiff:
+    def diff(self, older_itdf: "ITunesLibraryDataFrame", mod: Optional[list[str]] = None) -> ITunesDiff:
         """
         Updates the stream library files based on changes to the
         itunes archive
@@ -728,9 +693,7 @@ class ITunesLibraryDataFrame:
 
         modified_albums = {i.album for i in diff.modifed_tracks}
 
-        modded = ITunesSong.from_dataframe(
-            self.tracks[self.tracks["album"].isin(modified_albums)]
-        )
+        modded = ITunesSong.from_dataframe(self.tracks[self.tracks["album"].isin(modified_albums)])
 
         # Stage
         click.echo(click.style("Staging Tracks", bold=True))
@@ -767,32 +730,63 @@ class ITunesLibraryDataFrame:
         click.echo(click.style("\nTimestamp Staged Tracks", bold=True))
         parent_stamps = {str(i.path.parent): i for i in files_to_stamp}
         for _, v in parent_stamps.items():
-            files_to_stamp.append(
-                StagedTimestamp(
-                    path=v.path.parent, timestamp=v.timestamp, dest=v.dest.parent
-                )
-            )
+            files_to_stamp.append(StagedTimestamp(path=v.path.parent, timestamp=v.timestamp, dest=v.dest.parent))
 
         for staged_file in files_to_stamp:
             exit_code = staged_file.set_timestamp()
             if exit_code == 0:
-                click.echo(
-                    f"[{click.style('*', fg='green')}] {staged_file.timestamp} {staged_file.path}"
-                )
+                click.echo(f"[{click.style('*', fg='green')}] {staged_file.timestamp} {staged_file.path}")
             else:
-                click.echo(
-                    f"[{click.style('-', fg='red')}] {exit_code} {staged_file.path}"
-                )
+                click.echo(f"[{click.style('-', fg='red')}] {exit_code} {staged_file.path}")
 
         # Add staged music to stream and clean
         click.echo(click.style("\nAdding staged albums to music stream", bold=True))
-        album_folders = [
-            (p.path.parent, p.dest.parent) for _, p in parent_stamps.items()
-        ]
+        album_folders = [(p.path.parent, p.dest.parent) for _, p in parent_stamps.items()]
         for staged, destination in album_folders:
             click.echo(f"[{click.style('>', fg='green')}] {destination}")
             shutil.copytree(staged, destination, dirs_exist_ok=True)
-        shutil.rmtree(ITunesSong.stage_path())
+
+        if ITunesSong.stage_path().exists():
+            shutil.rmtree(ITunesSong.stage_path())
+
+    @staticmethod
+    def _cache_album_art(src_file: Path, cache_dir: Path) -> None:
+        """
+        Extracts the album art
+        """
+        outfile = cache_dir.joinpath("cover.jpg")
+
+        if not outfile.exists():
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            cmd = ["ffmpeg", "-i", str(src_file), "-an", "-vcodec", "copy", str(outfile)]
+            proc = subprocess.run(cmd, capture_output=True)
+
+            status = click.style("#", fg="green")
+            if proc.returncode != 0:
+                status = click.style("#", fg="red")
+            click.echo(f"[{status}] {outfile}")
+
+    @staticmethod
+    def cache_album_art() -> None:
+        """
+        Walks the stream music and caches album art in a mirrored directory. The mirrored directory will contain
+
+        /Artist/Album/cover
+        """
+
+        empty_directories = []
+        for root, dirs, files in os.walk(CONFIG.audio_streams[0]):
+            if len(dirs) == 0 and len(files) > 0:
+                _cache = Path(root.replace(str(CONFIG.audio_streams[0]), "/home/ryan/Pictures/.covercache/"))
+                _src = Path(root).joinpath(files[0])
+                ITunesLibraryDataFrame._cache_album_art(_src, _cache)
+
+            if len(dirs) == 0 and len(files) == 0:
+                empty_directories.append(root)
+
+        click.echo("Empty Directories")
+        for dir in empty_directories:
+            click.echo(dir)
 
     @classmethod
     def update(cls, modified: Optional[list[str]] = None) -> None:
@@ -818,6 +812,10 @@ class ITunesLibraryDataFrame:
 
         # Export playlists
         itdf.export_playlists()
+
+        # Cache albums
+        click.secho("\nCache Artwork")
+        cls.cache_album_art()
 
         # Find extra and missing files
         click.echo(click.style("\nExtra And Missing Files", bold=True))
@@ -854,9 +852,7 @@ class ITunesLibraryDataFrame:
 
         # Turn extra_files into reomved_tracks
         removed_tracks = [ITunesSong.wrap_remove_path(Path(i)) for i in extra_files]
-        repair_diff = ITunesDiff(
-            new_tracks=[], modifed_tracks=modified_songs, removed_tracks=removed_tracks
-        )
+        repair_diff = ITunesDiff(new_tracks=[], modifed_tracks=modified_songs, removed_tracks=removed_tracks)
 
         # Call update with the repair diff
         click.echo()

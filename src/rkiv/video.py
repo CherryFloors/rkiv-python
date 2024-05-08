@@ -116,9 +116,7 @@ class VideoRipper:
 
     def __init__(self, drive: OpticalDrive) -> None:
         self.drive = drive
-        self._temp_file_path = CONFIG.workspace.joinpath(
-            f"{drive.device_name}.video.temp"
-        )
+        self._temp_file_path = CONFIG.workspace.joinpath(f"{drive.device_name}.video.temp")
 
     def _store_user_input(self, user_input: UserInput) -> None:
         with open(self._temp_file_path, "w") as info_file:
@@ -196,9 +194,7 @@ class VideoRipper:
         self._store_user_input(user_input=_user_input)
 
     def _archive_disc(self, user_input: UserInput) -> None:
-        temp_dvd_output_holder = Path(user_input.output_path).joinpath(
-            f"TEMP_{user_input.disc_name}"
-        )
+        temp_dvd_output_holder = Path(user_input.output_path).joinpath(f"TEMP_{user_input.disc_name}")
         final_output_path = Path(user_input.output_path).joinpath(user_input.disc_name)
 
         if not Path(user_input.output_path).exists():
@@ -419,9 +415,7 @@ class VideoRipUI:
         else:
             return float(out.stdout.split()[0]) / 1024**2
 
-    def get_drive_progress(
-        self, drive: str, drive_status: dict[str, RipperMessage]
-    ) -> str:
+    def get_drive_progress(self, drive: str, drive_status: dict[str, RipperMessage]) -> str:
         # Get mount string
         total_size = self._get_directory_size(drive_status[drive].mount_path)
         if drive_status[drive].status == RipperStatus.RIPPING and total_size != 0:
@@ -483,7 +477,9 @@ class VideoRipUI:
             drv = Notification.drive_name
             nme = Notification.disc_name
             msg = "-".join(Notification.problems)
-            dash_string += f"|  {drv}    {nme[0:20]}{' '*(23 - len(nme[0:20]))}{msg[0:46]}{' '*(46 - len(msg[0:46]))}|\n"
+            dash_string += (
+                f"|  {drv}    {nme[0:20]}{' '*(23 - len(nme[0:20]))}{msg[0:46]}{' '*(46 - len(msg[0:46]))}|\n"
+            )
 
         if notification_total < 5:
             for i in range((5 - notification_total)):

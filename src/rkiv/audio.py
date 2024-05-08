@@ -18,11 +18,7 @@ CONFIG = Config()
 
 def get_files_list(root_path: str) -> List[str]:
     """Returns list full file path strings"""
-    return [
-        os.path.join(rName, fName)
-        for rName, _, fNames in os.walk(root_path)
-        for fName in fNames
-    ]
+    return [os.path.join(rName, fName) for rName, _, fNames in os.walk(root_path) for fName in fNames]
 
 
 def get_current_datetime_object() -> datetime:
@@ -31,9 +27,7 @@ def get_current_datetime_object() -> datetime:
 
 def convert_to_meta_data_timestamp_str(date_time_object: datetime) -> str:
     # DateTimeObject.astimezone(timezone.utc).isoformat()
-    return date_time_object.astimezone(timezone.utc).strftime(
-        "%Y-%m-%dT%H:%M:%S.000000Z"
-    )
+    return date_time_object.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000000Z")
 
 
 def convert_to_meta_data_date_str(date_time_object: datetime) -> str:
@@ -57,9 +51,7 @@ def time_stamp_alac(file: str, timestamp: str) -> int:
     return proc_output.returncode
 
 
-def convert_to_alac(
-    in_file_path: str, out_file_path: str, timestamp: Optional[str] = None
-) -> int:
+def convert_to_alac(in_file_path: str, out_file_path: str, timestamp: Optional[str] = None) -> int:
     # Define the cmd strings
     cmd_list = [
         "ffmpeg",
@@ -148,9 +140,7 @@ def audio_rip_wrapper(drive: OpticalDrive) -> None:
     output_array = out.stderr.splitlines()
     # Check for errors
     if "error" in out.stdout or "error" in out.stderr:
-        with open(
-            f"{CONFIG.music_rip_dir}/{drive.device_name}_error.log", "a+"
-        ) as errorout:
+        with open(f"{CONFIG.music_rip_dir}/{drive.device_name}_error.log", "a+") as errorout:
             errorout.write(f"--- {output_array[0]} ---\n")
             for l in output_array:
                 errorout.write(f"  {l}\n")
@@ -168,9 +158,7 @@ def audio_rip_wrapper(drive: OpticalDrive) -> None:
     # Move files to
     new_home = CONFIG.music_rip_dir.joinpath(str(uuid.uuid4()))
     new_home.mkdir()
-    out = subprocess.run(
-        [f"cp -r * {str(new_home)}/"], shell=True, capture_output=True, text=True
-    )
+    out = subprocess.run([f"cp -r * {str(new_home)}/"], shell=True, capture_output=True, text=True)
     out = subprocess.run(["rm -r *"], shell=True, capture_output=True, text=True)
 
 

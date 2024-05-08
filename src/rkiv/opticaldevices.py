@@ -102,7 +102,7 @@ class OpticalDrive:
         exists: bool = False
         try:
             exists = self.mount_path.exists()
-        except:
+        except Exception:
             pass
         return exists
 

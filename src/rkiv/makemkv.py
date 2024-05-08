@@ -1,4 +1,5 @@
 """ Wrapper module for MakeMKV """
+from __future__ import annotations
 import requests
 import subprocess
 from enum import Enum
@@ -6,6 +7,7 @@ from typing import List
 from html.parser import HTMLParser
 from datetime import timedelta
 from pathlib import Path
+from csv import reader
 
 from rkiv.inventory import ArchivedDisc
 from rkiv.config import Config
@@ -27,6 +29,10 @@ class MakeMKVBetaKeyParser(HTMLParser):
         self.feed(page.content.decode("utf-8"))
         return self.key
 
+    def set_reg_key(self) -> int:
+        proc = subprocess.run(["makemkvcon", "reg", self.key], capture_output=False)
+        return proc.returncode
+
 
 def extract_mkv(disc: ArchivedDisc, location: Path, title: int) -> None:
     """
@@ -37,12 +43,7 @@ def extract_mkv(disc: ArchivedDisc, location: Path, title: int) -> None:
         print(f"ERROR: Output path exists skipping title - {disc.title} - {title}")
         return None
     _output.mkdir(parents=True)
-    log_file = (
-        CONFIG.workspace.parent.joinpath("logs")
-        .joinpath("extract_mkv")
-        .joinpath(disc.title)
-        .with_suffix(".log")
-    )
+    log_file = CONFIG.workspace.parent.joinpath("logs").joinpath("extract_mkv").joinpath(disc.title).with_suffix(".log")
     log_file.parent.mkdir(parents=True, exist_ok=True)
 
     _args = ["makemkvcon", "-r", "mkv", f"file:{disc.path}", str(title), str(_output)]
@@ -62,9 +63,7 @@ def extract_mkv(disc: ArchivedDisc, location: Path, title: int) -> None:
 
     contents = list(_output.iterdir())
     if len(contents) != 1:
-        print(
-            f"ERROR: Output directory has {len(contents)} files - {disc.title} - {title}"
-        )
+        print(f"ERROR: Output directory has {len(contents)} files - {disc.title} - {title}")
 
     file_name = _output.joinpath(disc.title).with_suffix(contents[0].suffix)
     contents[0].rename(file_name)
@@ -142,7 +141,7 @@ class TitelInfoMMKV:
         return self.length >= other.length
 
     @staticmethod
-    def bubble_sort(l: list["TitelInfoMMKV"]) -> None:
+    def bubble_sort(l: list[TitelInfoMMKV]) -> None:
         end = len(l)
         for i in range(end - 1):
             for j in range(end - 1 - i):
@@ -154,12 +153,10 @@ class TitelInfoMMKV:
         return None
 
     @classmethod
-    def from_mkvinfo(cls, info: list[str]) -> "TitelInfoMMKV":
+    def from_mkvinfo(cls, info: list[str]) -> TitelInfoMMKV:
         splits = [i.split(",") for i in info]
         tinfo = {i[1]: i[3].replace('"', "") for i in splits if "TINFO" in i[0]}
-        sinfo = {
-            f"{i[1]}{i[2]}": i[4].replace('"', "") for i in splits if "SINFO" in i[0]
-        }
+        sinfo = {f"{i[1]}{i[2]}": i[4].replace('"', "") for i in splits if "SINFO" in i[0]}
 
         _id = int(info[0].split(":")[1].split(",")[0])
         _size_bytes = int(tinfo["11"])
@@ -187,7 +184,7 @@ class TitelInfoMMKV:
         )
 
     @classmethod
-    def parse_info(cls, info: list[str]) -> list["TitelInfoMMKV"]:
+    def parse_info(cls, info: list[str]) -> list[TitelInfoMMKV]:
         filtered_list = [i for i in info if "TINFO" in i or "SINFO" in i]
         by_id: dict[str, list[str]] = {}
 
@@ -263,3 +260,512 @@ class MakeMKV:
                 f"WARNING: {main.id} {main.length} {main.aspect_ratio} - 16:9_Over_rule - {max_full.id} {max_full.length} {max_full.aspect_ratio}"
             )
         return main
+
+
+class VideoStreamInfo:
+    id: int
+    title_id: int
+    codec: str
+    codec_friendly: str
+    resolution: str
+    aspect_ratio: str
+    bitrate: str
+    frame_rate: str
+    stream_name: str
+
+    def __init__(
+        self,
+        id: int,
+        title_id: int,
+        codec: str,
+        codec_friendly: str,
+        resolution: str,
+        aspect_ratio: str,
+        bitrate: str,
+        frame_rate: str,
+        stream_name: str,
+    ) -> None:
+        self.id = id
+        self.title_id = title_id
+        self.codec = codec
+        self.codec_friendly = codec_friendly
+        self.resolution = resolution
+        self.aspect_ratio = aspect_ratio
+        self.bitrate = bitrate
+        self.frame_rate = frame_rate
+        self.stream_name = stream_name
+
+    @classmethod
+    def from_csv_list(cls, sinfo: list[str]) -> VideoStreamInfo:
+        """
+        Returns a TitleInfo class by parsing a list of TINFO lines:
+        "id,code,value,strin_value" <- TINFO: has been stripped
+        """
+        _id = int(sinfo[0].split(",")[1])
+        _title_id = int(sinfo[0].split(",")[0])
+        _codec = ""
+        _codec_friendly = ""
+        _resolution = ""
+        _aspect_ratio = ""
+        _bitrate = ""
+        _frame_rate = ""
+        _stream_name = ""
+
+        for line in reader(sinfo):
+            tid, sid, code, vcode, value = line
+            value = value.strip('"')
+
+            if code == "6":
+                _codec = value
+
+            if code == "7":
+                _codec_friendly = value
+
+            if code == "13":
+                _bitrate = value
+
+            if code == "19":
+                _resolution = value
+
+            if code == "20":
+                _aspect_ratio = value
+
+            if code == "21":
+                _frame_rate = value
+
+            if code == "30":
+                _stream_name = value
+
+        return cls(
+            id=_id,
+            title_id=_title_id,
+            codec=_codec,
+            codec_friendly=_codec_friendly,
+            resolution=_resolution,
+            aspect_ratio=_aspect_ratio,
+            bitrate=_bitrate,
+            frame_rate=_frame_rate,
+            stream_name=_stream_name,
+        )
+
+
+class AudioStreamInfo:
+    id: int
+    title_id: int
+    channels_friendly: str
+    language_code: str
+    language_name: str
+    codec: str
+    codec_friendly: str
+    bitrate: str
+    channels: str
+    sample_rate: str
+    bit_depth: str
+    stream_name: str
+
+    def __init__(
+        self,
+        id: int,
+        title_id: int,
+        channels_friendly: str,
+        language_code: str,
+        language_name: str,
+        codec: str,
+        codec_friendly: str,
+        bitrate: str,
+        channels: str,
+        sample_rate: str,
+        bit_depth: str,
+        stream_name: str,
+    ) -> None:
+        self.id = id
+        self.title_id = title_id
+        self.channels_friendly = channels_friendly
+        self.language_code = language_code
+        self.language_name = language_name
+        self.codec = codec
+        self.codec_friendly = codec_friendly
+        self.bitrate = bitrate
+        self.channels = channels
+        self.sample_rate = sample_rate
+        self.bit_depth = bit_depth
+        self.stream_name = stream_name
+
+    @classmethod
+    def from_csv_list(cls, sinfo: list[str]) -> AudioStreamInfo:
+        """
+        Returns a TitleInfo class by parsing a list of TINFO lines:
+        "id,code,value,strin_value" <- TINFO: has been stripped
+        """
+
+        _id = int(sinfo[0].split(",")[1])
+        _title_id = int(sinfo[0].split(",")[0])
+        _channels_friendly = ""
+        _language_code = ""
+        _language_name = ""
+        _codec = ""
+        _codec_friendly = ""
+        _bitrate = ""
+        _channels = ""
+        _sample_rate = ""
+        _bit_depth = ""
+        _stream_name = ""
+
+        for line in reader(sinfo):
+            tid, sid, code, vcode, value = line
+            value = value.strip('"')
+
+            if code == "2":
+                _channels_friendly = value
+
+            if code == "3":
+                _language_code = value
+
+            if code == "4":
+                _language_name = value
+
+            if code == "6":
+                _codec = value
+
+            if code == "7":
+                _codec_friendly = value
+
+            if code == "13":
+                _bitrate = value
+
+            if code == "14":
+                _channels = value
+
+            if code == "17":
+                _sample_rate = value
+
+            if code == "18":
+                _bit_depth = value
+
+            if code == "30":
+                _stream_name = value
+
+        return cls(
+            id=_id,
+            title_id=_title_id,
+            channels_friendly=_channels_friendly,
+            language_code=_language_code,
+            language_name=_language_name,
+            codec=_codec,
+            codec_friendly=_codec_friendly,
+            bitrate=_bitrate,
+            channels=_channels,
+            sample_rate=_sample_rate,
+            bit_depth=_bit_depth,
+            stream_name=_stream_name,
+        )
+
+
+class SubtitleStreamInfo:
+    id: int
+    title_id: int
+    language_code: str
+    language_name: str
+    codec: str
+    codec_friendly: str
+    stream_name: str
+
+    def __init__(
+        self,
+        id: int,
+        title_id: int,
+        language_code: str,
+        language_name: str,
+        codec: str,
+        codec_friendly: str,
+        stream_name: str,
+    ) -> None:
+        self.id = id
+        self.title_id = title_id
+        self.language_code = language_code
+        self.language_name = language_name
+        self.codec = codec
+        self.codec_friendly = codec_friendly
+        self.stream_name = stream_name
+
+    @classmethod
+    def from_csv_list(cls, sinfo: list[str]) -> SubtitleStreamInfo:
+        """
+        Returns a TitleInfo class by parsing a list of TINFO lines:
+        "id,code,value,strin_value" <- TINFO: has been stripped
+        """
+
+        _id = int(sinfo[0].split(",")[1])
+        _title_id = int(sinfo[0].split(",")[0])
+        _language_code = ""
+        _language_name = ""
+        _codec = ""
+        _codec_friendly = ""
+        _stream_name = ""
+
+        for line in reader(sinfo):
+            tid, sid, code, vcode, value = line
+            value = value.strip('"')
+
+            if code == "3":
+                _language_code = value
+
+            if code == "4":
+                _language_name = value
+
+            if code == "6":
+                _codec = value
+
+            if code == "7":
+                _codec_friendly = value
+
+            if code == "30":
+                _stream_name = value
+
+        return cls(
+            id=_id,
+            title_id=_title_id,
+            language_code=_language_code,
+            language_name=_language_name,
+            codec=_codec,
+            codec_friendly=_codec_friendly,
+            stream_name=_stream_name,
+        )
+
+
+class MakeMKVTitleInfo:
+    id: int
+    video_streams: tuple[VideoStreamInfo]
+    audio_streams: tuple[AudioStreamInfo]
+    subtitle_streams: tuple[SubtitleStreamInfo]
+    chapters: int
+    source_file: str
+    export_name: str
+    size_bits: int
+    length: timedelta
+
+    def __init__(
+        self,
+        id: int,
+        video_streams: tuple[VideoStreamInfo],
+        audio_streams: tuple[AudioStreamInfo],
+        subtitle_streams: tuple[SubtitleStreamInfo],
+        chapters: int,
+        source_file: str,
+        export_name: str,
+        size_bits: int,
+        length: timedelta,
+    ) -> None:
+        self.id = id
+        self.video_streams = video_streams
+        self.audio_streams = audio_streams
+        self.subtitle_streams = subtitle_streams
+        self.chapters = chapters
+        self.source_file = source_file
+        self.export_name = export_name
+        self.size_bits = size_bits
+        self.length = length
+
+    @classmethod
+    def from_csv_lists(cls, tinfo: list[str], sinfo: list[str]) -> MakeMKVTitleInfo:
+        """
+        Returns a TitleInfo class by parsing a list of TINFO and SINFO lines:
+        "id,code,value,strin_value" <- TINFO: has been stripped
+        """
+
+        _id = int(tinfo[0].split(",")[0])
+        streams = {"Video": [], "Audio": [], "Subtitles": []}
+        temp_sinfo = []
+        stype = None
+
+        for line in reader(sinfo):
+            tid, sid, code, vcode, value = line
+            value = value.strip('"')
+
+            if code == "1" and stype is None:
+                stype = value
+
+            if code == "1" and len(temp_sinfo) > 0:
+                streams[stype].append(temp_sinfo)
+                temp_sinfo = []
+                stype = value
+
+            temp_sinfo.append(",".join(line))
+
+        _video_streams = tuple(VideoStreamInfo.from_csv_list(i) for i in streams["Video"])
+        _audio_streams = tuple(AudioStreamInfo.from_csv_list(i) for i in streams["Audio"])
+        _subtitle_streams = tuple(SubtitleStreamInfo.from_csv_list(i) for i in streams["Subtitles"])
+
+        _chapters = 0
+        _source_file = ""
+        _export_name = ""
+        _size_bits = 0
+        _length = timedelta(seconds=0)
+
+        for csv in reader(tinfo):
+            id, code, _, value = csv
+            value = value.strip('"')
+
+            if code == "8":
+                _chapters = int(value)
+
+            if code == "16":
+                _source_file = value
+
+            if code == "27":
+                _export_name = value
+
+            if code == "11":
+                _size_bits = int(value)
+
+            if code == "9":
+                h, m, s = value.split(":")
+                _length = timedelta(
+                    hours=float(h),
+                    minutes=float(m),
+                    seconds=float(s),
+                )
+
+        return cls(
+            id=_id,
+            video_streams=_video_streams,
+            audio_streams=_audio_streams,
+            subtitle_streams=_subtitle_streams,
+            chapters=_chapters,
+            source_file=_source_file,
+            export_name=_export_name,
+            size_bits=_size_bits,
+            length=_length,
+        )
+
+
+class MakeMKVInfo:
+    name: str
+    title_count: int
+    disc_type: str
+    titles: tuple[MakeMKVTitleInfo]
+
+    def __init__(
+        self,
+        name: str,
+        title_count: int,
+        disc_type: str,
+        titles: tuple[MakeMKVTitleInfo],
+    ) -> None:
+        self.name = name
+        self.title_count = title_count
+        self.disc_type = disc_type
+        self.titles = titles
+
+    @classmethod
+    def from_info(cls, info: str) -> MakeMKVInfo:
+        """
+        Returns a TitleInfo class by parsing a list of TINFO lines:
+        "id,code,value,strin_value" <- TINFO: has been stripped
+        """
+        _titles = []
+        build_title = False
+
+        info_lines = info.splitlines()
+        tinfo = []
+        sinfo = []
+
+        _name = ""
+        _title_count = 0
+        _disc_type = ""
+
+        for line in info_lines:
+            key, _, csv = line.partition(":")
+            if key == "TCOUNT":
+                _title_count = int(csv)
+
+            if key == "CINFO":
+                id, code, value = csv.split(",")
+                if id == "1":
+                    _disc_type = value
+
+                if id == "2":
+                    _name = value
+
+            if key == "TINFO" and build_title:
+                _titles.append(MakeMKVTitleInfo.from_csv_lists(tinfo, sinfo))
+                tinfo = []
+                sinfo = []
+                build_title = False
+
+            if key == "TINFO":
+                tinfo.append(csv)
+
+            if key == "SINFO":
+                build_title = True
+                sinfo.append(csv)
+
+        _titles.append(MakeMKVTitleInfo.from_csv_lists(tinfo, sinfo))
+
+        return cls(
+            name=_name,
+            title_count=_title_count,
+            disc_type=_disc_type,
+            titles=_titles,
+        )
+
+    # @staticmethod
+    # def _info_line_to_dict(line: str) -> dict[str, str]:
+    #     """"""
+    #
+    #     key, _, csv = line.partition(":")
+    #
+    #     if key == "CINFO":
+    #         pass
+    #
+    #     if key == "TINFO":
+    #         pass
+    #
+    #     if key == "SINFO":
+    #         pass
+    #
+    # @classmethod
+    # def from_info_scan(cls, info: str) -> MakeMKVInfo:
+    #     """"""
+    #     scan_dict = {"CINFO": {}, "TINFO": {}, "SINFO": {}}
+    #     info_lines = info.splitlines()
+    #
+    #     _name = ""
+    #     _title_count = 0
+    #     _disc_type = ""
+    #
+    #     for line in info_lines:
+    #         key, _, csv = line.partition(":")
+    #
+    #         if key == "TCOUNT":
+    #             _title_count = int(csv)
+    #
+    #         if key == "CINFO":
+    #             id, code, value = csv.split(",")
+    #
+    #         if key == "TINFO":
+    #             id, code, _, value = csv.split(",")
+    #
+    #         if key == "SINFO":
+    #             tid, sid, code, _, value = csv.split(",")
+
+    @classmethod
+    def scan_disc(cls, path: Path) -> MakeMKVInfo:
+        _args = [
+            "makemkvcon",
+            "--noscan",
+            "--minlength=0",
+            "-r",
+            "info",
+            f"file:{path}",
+        ]
+        proc = subprocess.run(args=_args, capture_output=True, text=True)
+        return cls.from_info(proc.stdout)
+
+
+if __name__ == "__main__":
+    path = "/home/ryan/Archive/Archive_II/unreleased/blu_ray/tv/Firefly/Firefly_S01/Firefly_S01_D03"
+    scan = MakeMKVInfo.scan_disc(Path(path))
+
+    with open("makemkv.movie.scan.csv", "r") as f:
+        file_scan = MakeMKVInfo.from_info(f.read())

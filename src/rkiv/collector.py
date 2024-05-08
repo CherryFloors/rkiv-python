@@ -27,6 +27,39 @@ from rkiv.jellyfinproxy import JellyfinMovie, JellyfinProxy
 
 
 @dataclass(slots=True)
+class TaggedCollection:
+    """
+    Class to hold generate a collection of movies based on tags
+
+    attributes
+    ----------
+    title: title of the collection
+    tags: list of tags to find movies that belong to the collection
+    """
+
+    title: str
+    tags: list[str]
+
+    @staticmethod
+    def pattern_matched_tags(patterns: set[str]) -> set[str]:
+        """
+        returns a set of jellyfin media tags that match the given pattern
+        - `patterns`: set of strings to match. Partial matches and case insensitve by default
+        """
+        all_tags = JellyfinProxy.get_tags()
+
+        return {t for t in all_tags if any(p in t for p in patterns)}
+
+    @classmethod
+    def christamas_tags_collection(cls) -> "TaggedCollection":
+        """
+        builds a Tagged collection using the christmas tags "christmas" and "holiday"
+        """
+
+        _ = cls.pattern_matched_tags(["christmas", "holiday"])
+
+
+@dataclass(slots=True)
 class CollectorDataFrame:
     """
     Class to hold external collections data frame with convenient
@@ -160,15 +193,10 @@ class JellyfinCollection:
         )
 
     @classmethod
-    def load_by_name(
-        cls, name: str, default: Optional["JellyfinCollection"]
-    ) -> "JellyfinCollection":
+    def load_by_name(cls, name: str, default: Optional["JellyfinCollection"] = None) -> "JellyfinCollection":
         """Attempts to a jellyfin collection by name"""
         collection_xmls = [
-            Path(r).joinpath(ff)
-            for r, _, f in os.walk(cls._collections_path)
-            for ff in f
-            if ff == "collection.xml"
+            Path(r).joinpath(ff) for r, _, f in os.walk(cls._collections_path) for ff in f if ff == "collection.xml"
         ]
 
         for xml in collection_xmls:
@@ -268,11 +296,7 @@ class TheRewatchablesEpisode:
         title, _, _ = title.partition("Bill’s")
 
         # Loop over each character to find the first partition
-        partitions = [
-            (i, TitlePartions(p))
-            for i, p in enumerate(title)
-            if p in TitlePartions.as_set()
-        ]
+        partitions = [(i, TitlePartions(p)) for i, p in enumerate(title) if p in TitlePartions.as_set()]
 
         # No partition found, try partitioning on "with"
         if len(partitions) == 0:
@@ -305,9 +329,7 @@ class TheRewatchablesEpisode:
         """Class constructor from an xml element"""
         _title = element.find("title").text
         _description = element.find("description").text
-        _pub_date = datetime.strptime(
-            element.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z"
-        )
+        _pub_date = datetime.strptime(element.find("pubDate").text, "%a, %d %b %Y %H:%M:%S %z")
         _duration = element.find("itunes:duration")
         _content_encoded = element.find("content:encoded")
 
@@ -364,9 +386,7 @@ class TheRewatchables:
         episodes = etree.findall("./channel/item")
         overview = etree.find("./channel/description")
 
-        _return.episodes = [
-            TheRewatchablesEpisode.from_rss_xml_element(e) for e in episodes
-        ]
+        _return.episodes = [TheRewatchablesEpisode.from_rss_xml_element(e) for e in episodes]
         _return.overview = overview.text
 
         return _return
@@ -376,22 +396,16 @@ class TheRewatchables:
         Episodes of the rewatchables that match Jellyfin movies
         """
         movies = JellyfinProxy.get_movies()
-        movies = pandas.DataFrame(
-            [{"jellyfin_title": i.Name, "movie": i} for i in movies]
-        )
+        movies = pandas.DataFrame([{"jellyfin_title": i.Name, "movie": i} for i in movies])
 
         exclude = movies["movie"].apply(lambda x: x.Id in self.false_positives)
         movies = movies[~exclude]
 
-        rewatchables = pandas.DataFrame(
-            {"collection_title": [i.movie_name for i in self.episodes]}
-        ).drop_duplicates()
+        rewatchables = pandas.DataFrame({"collection_title": [i.movie_name for i in self.episodes]}).drop_duplicates()
         rewatchables[["jellyfin_title", "score", "movie_index"]] = (
             rewatchables["collection_title"]
             .apply(process.extractOne, choices=movies["jellyfin_title"])
             .apply(pandas.Series)
         )
 
-        return CollectorDataFrame(
-            data=rewatchables.merge(movies, on="jellyfin_title", how="left")
-        )
+        return CollectorDataFrame(data=rewatchables.merge(movies, on="jellyfin_title", how="left"))

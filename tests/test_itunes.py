@@ -1,6 +1,5 @@
 """test_iteunes.py"""
 
-from pathlib import Path
 from xml.etree import ElementTree
 from datetime import datetime, timezone
 

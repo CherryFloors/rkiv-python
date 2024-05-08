@@ -7,11 +7,16 @@ from dataclasses import dataclass
 
 import pandas
 import pyudev  # type: ignore
+import click
 
 
-context = pyudev.Context()
-device = pyudev.Devices.from_device_file(context, "/dev/sr0")
-d = device.items()
+from rkiv.config import Config
+
+CONFIG = Config()
+
+# context = pyudev.Context()
+# device = pyudev.Devices.from_device_file(context, "/dev/sr0")
+# d = device.items()
 # def (dir: Path)
 
 
@@ -250,13 +255,15 @@ class ArchivedDisc:
         a deps.sh script togother and document in readme. Should include other eternals like
         MakeMKV, abdcde, etc...
         """
+        if root_path.stem == "lost+found":
+            return []
 
         if OpticalDiscType.categorize(dir=root_path) != OpticalDiscType.UNDEFINED:
             return [cls.from_dir(dir=root_path)]
 
         l = []
         root, dirs, _ = next(os.walk(root_path))
-        for dir in [Path(root).joinpath(d) for d in dirs if d not in {""}]:
+        for dir in [Path(root).joinpath(d) for d in dirs if d not in {"ArchiveShare"}]:
             l += cls.walk_disc_archive(root_path=dir)
 
         return l
@@ -274,22 +281,13 @@ class DiscArchiveDataFrame:
         "df": pandas.DataFrame,
     }
 
-    def __init__(
-        self,
-        df: pandas.DataFrame,
-    ) -> None:
+    def __init__(self, df: pandas.DataFrame) -> None:
         self.df = df
 
     @classmethod
-    def from_archive_list(
-        cls, archived_discs: List[ArchivedDisc]
-    ) -> "DiscArchiveDataFrame":
+    def from_archive_list(cls, archived_discs: List[ArchivedDisc]) -> "DiscArchiveDataFrame":
         """from_archive_list"""
-        return cls(
-            df=pandas.DataFrame(
-                data=[i.dict() for i in archived_discs], dtype=ArchivedDisc.dtypes()
-            )
-        )
+        return cls(df=pandas.DataFrame(data=[i.dict() for i in archived_discs], dtype=ArchivedDisc.dtypes()))
 
     @classmethod
     def from_parquet(cls, path: Path) -> "DiscArchiveDataFrame":
@@ -297,5 +295,71 @@ class DiscArchiveDataFrame:
         return cls(df=pandas.read_parquet(path=path))
 
 
-# @dataclass
-# class DataAccessLayer:
+@dataclass(slots=True)
+class Inventory:
+    """
+    Object to hold video streaming inventory
+
+    Attributes
+    ----------
+    stream_objects  : `list[StreamObject]`
+    video_archive  : `list[ArchivedDisc]`
+    unreleased_movies  : `list[ArchivedDisc]`
+    unreleased_tv  : `list[ArchivedDisc]`
+    """
+
+    stream_objects: list[StreamObject]
+    video_archive: list[ArchivedDisc]
+    unreleased_movies: list[ArchivedDisc]
+    unreleased_tv: list[ArchivedDisc]
+
+    @staticmethod
+    def find_unreleased_media(
+        stream_objects: list[StreamObject], archived_objects: list[ArchivedDisc]
+    ) -> list[ArchivedDisc]:
+        """
+        Finds unreleased media by comparing title names in a list of `StreamObject`'s and `ArchivedDisc`'s.
+
+        Parameters
+        ----------
+        stream_objects : `list[StreamObject]`
+        archived_objects : `list[ArchivedDisc]`
+
+        Returns
+        -------
+        `list[ArchivedDisc]`
+        """
+        stream_titles = {t.match_name for t in stream_objects}
+        return [i for i in archived_objects if i.title not in stream_titles]
+
+    @classmethod
+    def take_inventory(cls) -> "Inventory":
+        """
+        Factory method to build a brand new inventory object
+
+        Returns
+        -------
+        `Inventory`
+        """
+
+        click.secho("Walking the Archive", bold=True)
+        archived_discs = []
+        for archive in CONFIG.video_archives:
+            _archived_discs = ArchivedDisc.walk_disc_archive(root_path=archive)
+            archived_discs += _archived_discs
+            click.echo(f"  [{len(_archived_discs)}] {archive}")
+
+        click.secho("Walking the Stream", bold=True)
+        stream_objects = []
+        for stream in CONFIG.video_streams:
+            _stream_objects = StreamObject.walk_stream_library(root_path=stream)
+            stream_objects += _stream_objects
+            click.echo(f"  [{len(_stream_objects)}] {stream}")
+
+        unreleased = cls.find_unreleased_media(stream_objects=stream_objects, archived_objects=archived_discs)
+        return cls(
+            stream_objects=stream_objects,
+            video_archive=archived_discs,
+            unreleased_movies=[s for s in unreleased if s.category == MediaCategory.MOVIE],
+            unreleased_tv=[s for s in unreleased if s.category == MediaCategory.TV],
+        )

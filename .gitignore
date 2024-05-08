@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 
 .html_scratch
+scratch
 
 # C extensions
 *.so
