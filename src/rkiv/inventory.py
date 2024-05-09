@@ -6,7 +6,8 @@ from dataclasses import dataclass
 
 
 import pandas
-import pyudev  # type: ignore
+
+# import pyudev  # type: ignore
 import click
 
 

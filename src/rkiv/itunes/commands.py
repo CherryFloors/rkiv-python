@@ -1,11 +1,10 @@
 from typing import Optional
 
-from rkiv import itunes as _itunes
-from rkiv.cli import itunes
+from rkiv import itunes
 import click
 
 
-@itunes.command()
+@click.command()
 @click.option(
     "-m",
     "--modified",
@@ -17,10 +16,10 @@ def compare(modified: Optional[str]) -> None:
     _modified = None
     if modified is not None:
         _modified = modified.split(",")
-    _itunes.ITunesLibraryDataFrame.compare(modified=_modified)
+    itunes.ITunesLibraryDataFrame.compare(modified=_modified)
 
 
-@itunes.command()
+@click.command()
 @click.option(
     "-m",
     "--modified",
@@ -33,10 +32,16 @@ def update(modified: Optional[str]) -> None:
     _modified = None
     if modified is not None:
         _modified = modified.split(",")
-    _itunes.ITunesLibraryDataFrame.update(_modified)
+    itunes.ITunesLibraryDataFrame.update(_modified)
 
 
-@itunes.command()
+@click.command()
 def repair() -> None:
     """Attempts to repair missing and extra files"""
-    _itunes.ITunesLibraryDataFrame.repair()
+    itunes.ITunesLibraryDataFrame.repair()
+
+
+@click.command()
+def cache() -> None:
+    """Caches cover art"""
+    itunes.ITunesLibraryDataFrame.cache_album_art()

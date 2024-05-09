@@ -3,21 +3,23 @@ import time
 import os
 from datetime import datetime, timedelta
 from multiprocessing import Process
-from urllib.request import urlopen
+
+# from urllib.request import urlopen
 from typing import Optional
 import subprocess
 
-from pydvdid import compute  # type: ignore
+# from pydvdid import compute  # type: ignore
 import click
 from pathlib import Path
 
+import rkiv.arm.commands
+import rkiv.itunes.commands
 from rkiv import __version__
 from rkiv.config import Config
 from rkiv.audio import auto_audio_ripper, audio_rip_dash
 from rkiv import opticaldevices
 from rkiv.inventory import ArchivedDisc, MediaCategory
 from rkiv.makemkv import MakeMKV, extract_mkv
-from rkiv import itunes as _itunes
 from rkiv.dgmap import DiscGroupMap
 
 CONFIG = Config()
@@ -25,11 +27,11 @@ CONFIG = Config()
 
 @click.version_option(version=__version__)
 @click.group()
-def rkiv():
+def cli():
     pass
 
 
-@rkiv.command()
+@cli.command()
 def config():
     """
     Configure rkiv
@@ -37,7 +39,7 @@ def config():
     click.echo(CONFIG)
 
 
-@rkiv.command()
+@cli.command()
 def email():
     """
     Send Email
@@ -45,7 +47,7 @@ def email():
     click.echo("ugh...")
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-d", "--directory", help="Root directory of the disc group to map.", required=True)
 def dgmap(directory: str) -> None:
     """
@@ -63,7 +65,7 @@ def dgmap(directory: str) -> None:
     dgmap.to_csv(_csv)
 
 
-@rkiv.command()
+@cli.command()
 def unreleased() -> None:
     """
     Find any unreleased media (Movies and TV) not in the Stream
@@ -87,7 +89,7 @@ def unreleased() -> None:
         click.echo(show.title)
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-d", "--disc", help="Root of the disc/directory containing archived material")
 def analyze(disc: Path) -> None:
     """
@@ -97,25 +99,10 @@ def analyze(disc: Path) -> None:
     click.echo(disc)
 
 
-@rkiv.command()
-@click.option("-d", "--dev", required=True)
-def arm(dev):
-    """arm"""
-
-    # get_disc_type
-    # get_disc_info
-    # get_disc_title
-
-    click.secho("Automatic Ripping Machine", fg="green")
-    click.echo(f"Searching for match to {dev}")
-    crc64 = compute(dev)
-    click.echo(f"CRC64: {crc64}")
-    urlstring = f"https://1337server.pythonanywhere.com/api/v1/?mode=s&crc64={crc64}"
-    dvd_xml = urlopen(urlstring).read()
-    print(json.dumps(json.loads(dvd_xml), indent=4))
+cli.add_command(rkiv.arm.commands.arm)
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-d", "--dev", required=True)
 def sync():
     """
@@ -125,7 +112,7 @@ def sync():
     click.secho("Begin media sync to howard")
 
 
-@rkiv.command()
+@cli.command()
 def audio():
     click.secho("rkiv Audio Ripper\n", bold=True, underline=True)
 
@@ -145,7 +132,7 @@ def audio():
         click.echo(drive_progress)
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-d", "--drive", required=False)
 def video(drive: str):
     from rkiv.video import AutoVideoRipper
@@ -155,7 +142,7 @@ def video(drive: str):
     auto_video_ripper.run()
 
 
-@rkiv.command()
+@cli.command()
 def inventory() -> None:
     """inventory"""
     click.echo(
@@ -166,7 +153,7 @@ def inventory() -> None:
     # stat
 
 
-@rkiv.group()
+@cli.group()
 def itunes() -> None:
     """
     itunes related commands
@@ -174,50 +161,13 @@ def itunes() -> None:
     pass
 
 
-@itunes.command()
-@click.option(
-    "-m",
-    "--modified",
-    is_flag=False,
-    default=None,
-    help="Over ride modified algorithm by passing list of albums",
-)
-def compare(modified: Optional[str]) -> None:
-    _modified = None
-    if modified is not None:
-        _modified = modified.split(",")
-    _itunes.ITunesLibraryDataFrame.compare(modified=_modified)
+itunes.add_command(rkiv.itunes.commands.compare)
+itunes.add_command(rkiv.itunes.commands.update)
+itunes.add_command(rkiv.itunes.commands.repair)
+itunes.add_command(rkiv.itunes.commands.cache)
 
 
-@itunes.command()
-@click.option(
-    "-m",
-    "--modified",
-    is_flag=False,
-    default=None,
-    help="Over ride modified algorithm by passing list of albums",
-)
-def update(modified: Optional[str]) -> None:
-    """Updates the music stream based on the iTunes XML"""
-    _modified = None
-    if modified is not None:
-        _modified = modified.split(",")
-    _itunes.ITunesLibraryDataFrame.update(_modified)
-
-
-@itunes.command()
-def repair() -> None:
-    """Attempts to repair missing and extra files"""
-    _itunes.ITunesLibraryDataFrame.repair()
-
-
-@itunes.command()
-def cache() -> None:
-    """Caches cover art"""
-    _itunes.ITunesLibraryDataFrame.cache_album_art()
-
-
-@rkiv.command()
+@cli.command()
 @click.option("-c", "--collection", required=True, is_flag=False, help="Directory containing the movies to release")
 @click.option("-n", "--number", required=False, default=-1, help="Number of movies to select for release.")
 @click.option("-e", "--exclude", required=False, default=None, help="Patterns to ignore, comma delimited")
@@ -259,7 +209,7 @@ def release(collection: str, number: int, exclude: Optional[str]) -> None:
         movie.parent.rename(new_path)
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-c", "--collection", is_flag=False, default=None, help="Exctract archived discs found here")
 @click.option("-o", "--output", is_flag=False, default=None, help="Store .mkv files here")
 def extract(collection: str, output: str):
@@ -285,7 +235,7 @@ def extract(collection: str, output: str):
         extract_mkv(disc, Path(output), title.id)
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-c", "--collection", is_flag=False, default=None, help="Directory containing video files")
 @click.option("-o", "--output", is_flag=False, help="Output directory")
 def h265(collection: str, output: str):
@@ -347,7 +297,7 @@ def h265(collection: str, output: str):
         handbrake_encode(input=file, output=out_file)
 
 
-@rkiv.command()
+@cli.command()
 def makemkv():
     """flacify"""
     from rkiv.makemkv import MakeMKVBetaKeyParser
@@ -357,7 +307,7 @@ def makemkv():
     click.echo(f"Reg Exit Code: {parser.set_reg_key()}")
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-l", "--last", required=False)
 def latest(last: int = 90):
     """
@@ -367,7 +317,7 @@ def latest(last: int = 90):
     pass
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-d", "--days", required=False, type=int)
 @click.option(
     "-s",
@@ -416,7 +366,7 @@ def freshjelly(days: Optional[int], save_date: bool, greet: bool):
         f.write(FinLetter.fresh_jelly(start_time=start, end_time=end, greet=greet))
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-s", "--scrape", is_flag=True, default=False, help="Update collection info")
 def collector(scrape: bool) -> None:
     """
@@ -440,7 +390,7 @@ def collector(scrape: bool) -> None:
     click.echo(collection_df.table_summary())
 
 
-@rkiv.command()
+@cli.command()
 @click.option("-p", "--pattern")
 def jellytag(pattern: Optional[str] = None) -> None:
     """

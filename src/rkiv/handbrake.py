@@ -67,15 +67,6 @@ class Color(BaseModel):
     Transfer: int
 
 
-class Duration(BaseModel):
-    """Duration"""
-
-    Hours: int
-    Minutes: int
-    Seconds: int
-    Ticks: int
-
-
 class FrameRate(BaseModel):
     """FrameRate"""
 

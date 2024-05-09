@@ -20,7 +20,7 @@ pycdio = "^2.1.1"
 thefuzz = "^0.20.0"
 
 [tool.poetry.scripts]
-rkiv = "rkiv.cli:rkiv"
+rkiv = "rkiv.cli:cli"
 
 
 [tool.poetry.group.dev.dependencies]

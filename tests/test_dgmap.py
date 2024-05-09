@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from rkiv.dgmap import DiscGroupMapInfo, DiscGroupMapInfo
+from rkiv.dgmap import DiscGroupMapInfo
 
 
 class TestTitleInfo:

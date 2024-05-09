@@ -80,7 +80,7 @@ class RewatchSegment:
         if fade_in != "" and fade_out != "":
             delim = ","
 
-        return f"{fade_in}{delim}{fade_out}"  #,scale={self.width}:{self.height}"
+        return f"{fade_in}{delim}{fade_out}"  # ,scale={self.width}:{self.height}"
 
     @property
     def audio_filter(self) -> str:
@@ -130,12 +130,11 @@ class RewatchSegment:
         #
         # cmd.append(str(self.path))
 
-        #TEMP _ = TheRewatch.run_cmd(self.command())
+        # TEMP _ = TheRewatch.run_cmd(self.command())
         assert self.path.exists()
 
 
 class MovieChapterSegment:
-
     id: int
     path: Path
 
@@ -145,7 +144,6 @@ class MovieChapterSegment:
 
 
 class TheRewatch:
-
     rewatchables_scan: HandBrakeTitle
     movie_scan: HandBrakeTitle
     movie: Path
@@ -195,9 +193,8 @@ class TheRewatch:
         )
 
     def split_movie_chapters(self) -> list[MovieChapterSegment]:
-
         cmd = ["mkvmerge", "-o", "movie.mkv", "--split", "chapters:all", str(self.movie)]
-        #TEMP self.run_cmd(cmd)
+        self.run_cmd(cmd)
         segments = [Path(f"movie-{str(i + 1).zfill(3)}.mkv") for i, _ in enumerate(self.movie_scan.ChapterList)]
 
         for p in segments:
@@ -206,7 +203,6 @@ class TheRewatch:
         return [MovieChapterSegment(id=i, path=p) for i, p in enumerate(segments)]
 
     def build_command(self, segments: list[MovieChapterSegment | RewatchSegment]) -> str:
-
         cmd = ["ffmpeg"]
         for seg in segments:
             cmd += ["-i", str(seg.path)]
@@ -219,7 +215,6 @@ class TheRewatch:
                 filter_complex += f"[{i}:v]fps=fps=film[v{i}]; "
 
         for i, seg in enumerate(segments):
-
             # # s = f"[{i}:v]"
             # s = ""
             # if isinstance(seg, RewatchSegment):
@@ -261,7 +256,6 @@ class TheRewatch:
 
         rewatch_segments = []
         for id in range(segments):
-
             start = id * offset
             end = start + segment_length
             if id == segments - 1:
@@ -290,10 +284,10 @@ class TheRewatch:
         combined.append(rewatch_segments.pop(0))
         last = rewatch_segments.pop(-1)
         for i, x in enumerate(rewatch_segments):
-            combined += movie_chapters[(i * stride):((i + 1) * stride)]
+            combined += movie_chapters[(i * stride) : ((i + 1) * stride)]
             combined.append(x)
 
-        combined += movie_chapters[((i + 1) * stride):]
+        combined += movie_chapters[((i + 1) * stride) :]
         combined.append(last)
         # Join
         for comb in combined:
@@ -317,4 +311,3 @@ if __name__ == "__main__":
     movie = Path("/home/ryan/Archive/Stream/movies/In_The_Line_Of_Fire/In_The_Line_Of_Fire.mkv")
     rw = TheRewatch.from_paths(movie, rewatch)
     rw.do_the_thing()
-

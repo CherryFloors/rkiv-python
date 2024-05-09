@@ -6,7 +6,7 @@ names. This is mainly an issue with tv shows.
 from __future__ import annotations
 
 import csv
-from typing import Optional, Any
+from typing import Any
 from datetime import timedelta
 from pathlib import Path
 

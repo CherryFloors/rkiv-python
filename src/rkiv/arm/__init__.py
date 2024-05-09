@@ -7,6 +7,10 @@ class OpticalDiscType(str, Enum):
     BLU_RAY = "blu_ray"
 
 
+class AutomatedRippingMachine:
+    pass
+
+
 # class OpticalDrive:
 #     __slots__ = (
 #         "path",
