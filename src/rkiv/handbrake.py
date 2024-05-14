@@ -167,7 +167,7 @@ class HandBrakeScan(BaseModel):
     @staticmethod
     def scan(path: Path) -> dict:
         """Scans a file with handbrake returns json"""
-        cmd = ["HandBrakeCLI", "--json", "--title", "0", "--scan", "--min-duration", "0", "--input", path]
+        cmd = ["HandBrakeCLI", "--json", "--title", "0", "--scan", "--min-duration", "0", "--input", str(path)]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         lines = proc.stdout.splitlines()
         idx = lines.index("JSON Title Set: {")

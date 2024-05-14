@@ -56,7 +56,7 @@ class TaggedCollection:
         builds a Tagged collection using the christmas tags "christmas" and "holiday"
         """
 
-        _ = cls.pattern_matched_tags(["christmas", "holiday"])
+        _ = cls.pattern_matched_tags({"christmas", "holiday"})
 
 
 @dataclass(slots=True)
@@ -89,7 +89,7 @@ class CollectorDataFrame:
         return self.data[~self.match_mask]
 
     @property
-    def movie(self) -> pandas.DataFrame:
+    def movie(self) -> pandas.Series:
         """External collection items not found in Jellyfin library"""
         return self.data["movie"]
 
@@ -153,7 +153,7 @@ class JellyfinCollection:
 
     @property
     def file_path(self) -> Path:
-        """jellyfin filepath for collection xml"""
+        """jellyfin filepath DataFramefor collection xml"""
         parent = self._collections_path.joinpath(f"{self.local_title} [boxset]")
         return parent.joinpath("collection").with_suffix(".xml")
 

@@ -202,7 +202,7 @@ class TheRewatch:
 
         return [MovieChapterSegment(id=i, path=p) for i, p in enumerate(segments)]
 
-    def build_command(self, segments: list[MovieChapterSegment | RewatchSegment]) -> str:
+    def build_command(self, segments: list[MovieChapterSegment | RewatchSegment]) -> list[str]:
         cmd = ["ffmpeg"]
         for seg in segments:
             cmd += ["-i", str(seg.path)]
@@ -255,6 +255,7 @@ class TheRewatch:
         offset = segment_length - fade * 2
 
         rewatch_segments = []
+        end: int | None
         for id in range(segments):
             start = id * offset
             end = start + segment_length
@@ -284,7 +285,7 @@ class TheRewatch:
         combined.append(rewatch_segments.pop(0))
         last = rewatch_segments.pop(-1)
         for i, x in enumerate(rewatch_segments):
-            combined += movie_chapters[(i * stride) : ((i + 1) * stride)]
+            combined += list(movie_chapters[(i * stride) : ((i + 1) * stride)])
             combined.append(x)
 
         combined += movie_chapters[((i + 1) * stride) :]

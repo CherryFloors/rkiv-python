@@ -1,3 +1,4 @@
+import asyncio
 from enum import Enum
 
 
@@ -5,6 +6,12 @@ class OpticalDiscType(str, Enum):
     CD = "cd"
     DVD = "dvd"
     BLU_RAY = "blu_ray"
+
+
+class ARMUserInterface:
+
+    def update(self) -> None:
+        ...
 
 
 class AutomatedRippingMachine:

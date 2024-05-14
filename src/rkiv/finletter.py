@@ -18,7 +18,9 @@ class FinLetter:
     def fresh_jelly(start_time: datetime, end_time: datetime, greet: bool = False) -> str:
         greeting = ""
         if greet:
-            greeting = click.edit(editor=CONFIG.editor).rstrip()
+            _greeting = click.edit(editor=CONFIG.editor)
+            if _greeting is not None:
+                greeting = _greeting.rstrip()
 
         fresh_movies = JellyfinProxy.get_latest_movies(start_time=start_time, end_time=end_time)
         movies_html = "".join([m.to_html() for m in fresh_movies])
