@@ -1,7 +1,10 @@
 # import json
 # from urllib.request import urlopen
+import asyncio
 
 import click
+
+from rkiv.arm.tui import ARMUserInterface
 
 # from pydvdid import compute  # type: ignore
 
@@ -15,10 +18,15 @@ def arm():
     # get_disc_info
     # get_disc_title
 
-    click.secho("Automatic Ripping Machine", fg="green")
+    # click.secho("Automatic Ripping Machine", fg="green")
     # click.echo(f"Searching for match to {dev}")
     # crc64 = compute(dev)
     # click.echo(f"CRC64: {crc64}")
     # urlstring = f"https://1337server.pythonanywhere.com/api/v1/?mode=s&crc64={crc64}"
     # dvd_xml = urlopen(urlstring).read()
     # print(json.dumps(json.loads(dvd_xml), indent=4))
+    try:
+        ui = ARMUserInterface()
+        asyncio.run(ui.run())
+    except KeyboardInterrupt:
+        asyncio.run(ui.shutdown())

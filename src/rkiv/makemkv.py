@@ -2,15 +2,22 @@
 from __future__ import annotations
 import requests
 import subprocess
+import os
+import tempfile
 from enum import Enum
-from typing import List
+from typing import List, Callable
 from html.parser import HTMLParser
 from datetime import timedelta
 from pathlib import Path
 from csv import reader
+from asyncio.streams import StreamReader
+import asyncio
 
+from rkiv.arm import UserInput
+from rkiv.opticaldevices import OpticalDrive
 from rkiv.inventory import ArchivedDisc
 from rkiv.config import Config
+
 
 CONFIG = Config()
 
@@ -535,9 +542,9 @@ class SubtitleStreamInfo:
 
 class MakeMKVTitleInfo:
     id: int
-    video_streams: tuple[VideoStreamInfo]
-    audio_streams: tuple[AudioStreamInfo]
-    subtitle_streams: tuple[SubtitleStreamInfo]
+    video_streams: tuple[VideoStreamInfo, ...]
+    audio_streams: tuple[AudioStreamInfo, ...]
+    subtitle_streams: tuple[SubtitleStreamInfo, ...]
     chapters: int
     source_file: str
     export_name: str
@@ -547,9 +554,9 @@ class MakeMKVTitleInfo:
     def __init__(
         self,
         id: int,
-        video_streams: tuple[VideoStreamInfo],
-        audio_streams: tuple[AudioStreamInfo],
-        subtitle_streams: tuple[SubtitleStreamInfo],
+        video_streams: tuple[VideoStreamInfo, ...],
+        audio_streams: tuple[AudioStreamInfo, ...],
+        subtitle_streams: tuple[SubtitleStreamInfo, ...],
         chapters: int,
         source_file: str,
         export_name: str,
@@ -574,8 +581,8 @@ class MakeMKVTitleInfo:
         """
 
         _id = int(tinfo[0].split(",")[0])
-        streams = {"Video": [], "Audio": [], "Subtitles": []}
-        temp_sinfo = []
+        streams: dict[str, list[list[str]]] = {"Video": [], "Audio": [], "Subtitles": []}
+        temp_sinfo: list[str] = []
         stype = None
 
         for line in reader(sinfo):
@@ -585,7 +592,7 @@ class MakeMKVTitleInfo:
             if code == "1" and stype is None:
                 stype = value
 
-            if code == "1" and len(temp_sinfo) > 0:
+            if code == "1" and len(temp_sinfo) > 0 and stype is not None:
                 streams[stype].append(temp_sinfo)
                 temp_sinfo = []
                 stype = value
@@ -640,22 +647,32 @@ class MakeMKVTitleInfo:
 
 
 class MakeMKVInfo:
+    """
+    Optical video disc info provided by makemkv
+    """
+
     name: str
     title_count: int
     disc_type: str
-    titles: tuple[MakeMKVTitleInfo]
+    titles: tuple[MakeMKVTitleInfo, ...]
+    length_titles: timedelta
+    gigabytes_titles: float
 
     def __init__(
         self,
         name: str,
         title_count: int,
         disc_type: str,
-        titles: tuple[MakeMKVTitleInfo],
+        titles: tuple[MakeMKVTitleInfo, ...],
+        length_titles: timedelta,
+        gigabytes_titles: float,
     ) -> None:
         self.name = name
         self.title_count = title_count
         self.disc_type = disc_type
         self.titles = titles
+        self.length_titles = length_titles
+        self.gigabytes_titles = gigabytes_titles
 
     @classmethod
     def from_info(cls, info: str) -> MakeMKVInfo:
@@ -667,8 +684,8 @@ class MakeMKVInfo:
         build_title = False
 
         info_lines = info.splitlines()
-        tinfo = []
-        sinfo = []
+        tinfo: list[str] = []
+        sinfo: list[str] = []
 
         _name = ""
         _title_count = 0
@@ -685,7 +702,7 @@ class MakeMKVInfo:
                     _disc_type = value
 
                 if id == "2":
-                    _name = value
+                    _name = value.strip('"')
 
             if key == "TINFO" and build_title:
                 _titles.append(MakeMKVTitleInfo.from_csv_lists(tinfo, sinfo))
@@ -706,66 +723,106 @@ class MakeMKVInfo:
             name=_name,
             title_count=_title_count,
             disc_type=_disc_type,
-            titles=_titles,
+            titles=tuple(_titles),
+            length_titles=sum([i.length for i in _titles], timedelta()),
+            gigabytes_titles=sum(i.size_bits for i in _titles) / (1024**3),
         )
 
-    # @staticmethod
-    # def _info_line_to_dict(line: str) -> dict[str, str]:
-    #     """"""
-    #
-    #     key, _, csv = line.partition(":")
-    #
-    #     if key == "CINFO":
-    #         pass
-    #
-    #     if key == "TINFO":
-    #         pass
-    #
-    #     if key == "SINFO":
-    #         pass
-    #
-    # @classmethod
-    # def from_info_scan(cls, info: str) -> MakeMKVInfo:
-    #     """"""
-    #     scan_dict = {"CINFO": {}, "TINFO": {}, "SINFO": {}}
-    #     info_lines = info.splitlines()
-    #
-    #     _name = ""
-    #     _title_count = 0
-    #     _disc_type = ""
-    #
-    #     for line in info_lines:
-    #         key, _, csv = line.partition(":")
-    #
-    #         if key == "TCOUNT":
-    #             _title_count = int(csv)
-    #
-    #         if key == "CINFO":
-    #             id, code, value = csv.split(",")
-    #
-    #         if key == "TINFO":
-    #             id, code, _, value = csv.split(",")
-    #
-    #         if key == "SINFO":
-    #             tid, sid, code, _, value = csv.split(",")
-
     @classmethod
-    def scan_disc(cls, path: Path) -> MakeMKVInfo:
-        _args = [
-            "makemkvcon",
-            "--noscan",
-            "--minlength=0",
-            "-r",
-            "info",
-            f"file:{path}",
-        ]
+    def scan_disc(cls, disc: Path | ArchivedDisc | OpticalDrive) -> MakeMKVInfo:
+        _args = ["makemkvcon", "--noscan", "--minlength=0", "-r", "info"]
+
+        if isinstance(disc, Path):
+            _args.append(f"file:{disc}")
+
+        if isinstance(disc, ArchivedDisc):
+            _args.append(f"file:{disc.path}")
+
+        if isinstance(disc, OpticalDrive):
+            _args.append(f"dev:{disc.device_path}")
+
         proc = subprocess.run(args=_args, capture_output=True, text=True)
         return cls.from_info(proc.stdout)
 
 
-if __name__ == "__main__":
-    path = "/home/ryan/Archive/Archive_II/unreleased/blu_ray/tv/Firefly/Firefly_S01/Firefly_S01_D03"
-    scan = MakeMKVInfo.scan_disc(Path(path))
+class MakeMKVRipper:
+    """
+    Use makemkv to rip stuff
+    """
 
-    with open("makemkv.movie.scan.csv", "r") as f:
-        file_scan = MakeMKVInfo.from_info(f.read())
+    stage: str
+    progress: float
+    drive: OpticalDrive
+    progress_callback: Callable[[OpticalDrive, float], None]
+
+    def __init__(
+        self, stage: str, progress: float, drive: OpticalDrive, progress_callback: Callable[[OpticalDrive, float], None]
+    ) -> None:
+        self.stage = stage
+        self.progress = progress
+        self.drive = drive
+        self.progress_callback = progress_callback
+
+    async def update_progress(self, stderr: StreamReader) -> None:
+        """
+        Update the progress of the running process
+        """
+
+        while True:
+            buffer = await stderr.readline()
+            if not buffer:
+                break
+
+            line = buffer.rstrip(b"\n").decode()
+            code, _, csv = line.partition(":")
+            if code == "PRGV":
+                _, total, max = csv.split(",")
+                self.progress = float(total) / float(max)
+                self.progress_callback(self.drive, self.progress)
+
+    async def extract(self, input: UserInput, drive: OpticalDrive) -> str:
+        title = input.name
+        _output = CONFIG.video_rip_dir.joinpath("makemkv").joinpath(title)
+
+        disc_suffix = f"D{str(input.disc).zfill(2)}"
+        if input.season is not None:
+            season_suffix = f"S{str(input.season).zfill(2)}"
+            disc_suffix = f"{season_suffix}.{disc_suffix}"
+            _output = _output.joinpath(f"{title}.{season_suffix}")
+
+        disc_title = f"{input.name}.{disc_suffix}"
+        _output = _output.joinpath(disc_title)
+
+        if not _output.exists():
+            _output.mkdir(parents=True)
+
+        device = f"dev:{drive.device_path}"
+        # _args = ("mkv", "-r", "--noscan", "--messages=msg.log", "--progress=-stderr", "dev:/dev/sr1", "all", "/home/ryan/Videos/makemkv/")
+        # _args = ("mkv", "-r", "--noscan", "--progress=-stderr", device, "all", str(_output))
+        _args = ("mkv", "-r", "--noscan", "--progress=-stderr", device, "all", str(_output))
+        aproc = await asyncio.create_subprocess_exec(
+            "makemkvcon", *_args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+        )
+        await asyncio.gather(self.update_progress(aproc.stderr))
+
+        out_code = await aproc.wait()
+        results = await aproc.stdout.read()
+        results = results.decode()
+
+        log = CONFIG.workspace.parent.joinpath("logs").joinpath("makemkv").joinpath(title).joinpath(f"{disc_title}.log")
+        if not log.parent.exists():
+            log.parent.mkdir(parents=True)
+
+        with open(log, "a") as f:
+            f.write(results)
+
+        _ = subprocess.run(["eject", str(drive.device_path)])
+        return results
+
+    # def rippper(input: UserInput, drive: OpticalDrive) -> None:
+
+
+if __name__ == "__main__":
+    # _args = ["makemkvcon", "mkv", "all", "--noscan", "--minlength=0", "-r", f"file:{disc}"]
+    drive = OpticalDrive.get_optical_drive("sr1")
+    mkvinfo = MakeMKVInfo.scan_disc(disc=drive)

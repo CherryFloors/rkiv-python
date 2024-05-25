@@ -25,3 +25,9 @@ Third Pass
 ```sh
 ddrescue -b 2048 -d -R -r 3 -v /dev/sr0 dvd.iso rescue.log
 ```
+
+## ARM Todo
+- finish logging and notification parsing
+- print notifications on exit
+- add option to do old school disc backup/abort if discs are too big
+
